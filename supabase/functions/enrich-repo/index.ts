@@ -57,6 +57,25 @@ const STYLING_LIBS = [
   "vanilla-extract", "@stitches/react", "linaria",
 ];
 
+const BOT_LOGINS = [
+  "dependabot", "renovate-bot", "github-actions", "greenkeeper",
+  "snyk-bot", "codecov-commenter", "semantic-release-bot",
+  "allcontributors", "imgbot", "stale",
+];
+
+function isBot(login: string, profileType: string): boolean {
+  if (profileType === "Bot") return true;
+  if (login.endsWith("[bot]")) return true;
+  if (BOT_LOGINS.includes(login.toLowerCase())) return true;
+  return false;
+}
+
+function isRealPerson(profile: any, login: string): { isReal: boolean; reason?: string } {
+  if (profile.type === "Organization") return { isReal: false, reason: "organization" };
+  if (isBot(login, profile.type || "")) return { isReal: false, reason: "bot" };
+  return { isReal: true };
+}
+
 function scoreCriterion1(
   packageJson: any | null,
   tsconfigExists: boolean,
@@ -242,12 +261,40 @@ serve(async (req) => {
       notes: result.notes,
     });
 
-    // Upsert person
+    // Upsert person (only real people)
     const ownerLogin = repo.owner_login;
     if (ownerLogin) {
       // Fetch GitHub profile
       const profileRes = await githubFetch(`https://api.github.com/users/${ownerLogin}`);
       const profile = profileRes.ok ? await profileRes.json() : {};
+
+      const { isReal, reason } = isRealPerson(profile, ownerLogin);
+      if (!isReal) {
+        console.log(`Skipping non-person: ${ownerLogin} (${reason})`);
+        return new Response(
+          JSON.stringify({ repoId, fullName, criterion: "react_ts_css", ...result, skippedPerson: true, reason }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Determine if profile is sparse (low confidence)
+      const isSparse = !profile.name && !profile.bio && !profile.blog && (profile.followers || 0) === 0;
+
+      const profileData = {
+        name: profile.name,
+        avatar_url: profile.avatar_url,
+        html_url: profile.html_url,
+        bio: profile.bio,
+        blog: profile.blog,
+        email: profile.email,
+        twitter_username: profile.twitter_username,
+        public_repos: profile.public_repos,
+        followers: profile.followers,
+        company: profile.company,
+        location: profile.location,
+        is_real_person: true,
+        is_sparse_profile: isSparse,
+      };
 
       const { data: existingPerson } = await supabase
         .from("people")
@@ -258,45 +305,14 @@ serve(async (req) => {
       let personId: string;
       if (existingPerson) {
         personId = existingPerson.id;
-        // Update profile
         await supabase
           .from("people")
-          .update({
-            profile: {
-              name: profile.name,
-              avatar_url: profile.avatar_url,
-              html_url: profile.html_url,
-              bio: profile.bio,
-              blog: profile.blog,
-              email: profile.email,
-              twitter_username: profile.twitter_username,
-              public_repos: profile.public_repos,
-              followers: profile.followers,
-              company: profile.company,
-              location: profile.location,
-            },
-            updated_at: new Date().toISOString(),
-          })
+          .update({ profile: profileData, updated_at: new Date().toISOString() })
           .eq("id", personId);
       } else {
         const { data: newPerson, error: personErr } = await supabase
           .from("people")
-          .insert({
-            login: ownerLogin,
-            profile: {
-              name: profile.name,
-              avatar_url: profile.avatar_url,
-              html_url: profile.html_url,
-              bio: profile.bio,
-              blog: profile.blog,
-              email: profile.email,
-              twitter_username: profile.twitter_username,
-              public_repos: profile.public_repos,
-              followers: profile.followers,
-              company: profile.company,
-              location: profile.location,
-            },
-          })
+          .insert({ login: ownerLogin, profile: profileData })
           .select("id")
           .single();
         if (personErr) throw new Error(`Person insert failed: ${personErr.message}`);

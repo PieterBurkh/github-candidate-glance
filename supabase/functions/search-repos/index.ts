@@ -69,6 +69,8 @@ serve(async (req) => {
         const data = await res.json();
         for (const item of data.items || []) {
           if (seen.has(item.full_name)) continue;
+          // Skip non-User owners (organizations, bots)
+          if (item.owner?.type !== "User") continue;
           seen.add(item.full_name);
           repos.push({
             run_id: run.id,
@@ -84,6 +86,7 @@ serve(async (req) => {
               pushed_at: item.pushed_at,
               html_url: item.html_url,
               default_branch: item.default_branch,
+              owner_type: item.owner?.type || "Unknown",
             },
           });
         }
