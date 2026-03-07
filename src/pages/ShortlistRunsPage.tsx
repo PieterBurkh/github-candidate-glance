@@ -19,6 +19,7 @@ export default function ShortlistRunsPage() {
   const { data: runs, isLoading } = useShortlistRuns();
   const startRun = useStartShortlistRun();
   const resumeRun = useResumeShortlistRun();
+  const pauseRun = usePauseShortlistRun();
 
   return (
     <div className="min-h-screen bg-background">
