@@ -390,6 +390,19 @@ async function processLonglist(longlistRunId: string) {
   }).eq("id", longlistRunId);
 
   console.log(`Longlist run ${longlistRunId} paused: ${totalProcessed} processed this round, ${pendingNow} pending`);
+
+  // Auto-continue: re-invoke self to keep processing
+  const functionUrl = `${SUPABASE_URL}/functions/v1/build-longlist`;
+  fetch(functionUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    },
+    body: JSON.stringify({ longlistRunId }),
+  }).catch(err => console.error("Auto-continue failed:", err));
+
+  console.log(`Auto-continuing longlist run ${longlistRunId}...`);
 }
 
 Deno.serve(async (req) => {
