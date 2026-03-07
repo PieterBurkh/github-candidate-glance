@@ -19,11 +19,13 @@ import {
 
 export default function LeadsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"score" | "enriched">("score");
+  const [sortBy, setSortBy] = useState<"score" | "enriched">("enriched");
   const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
 
-  const sorted = [...(candidates || [])].sort((a, b) => {
+  const enrichedOnly = (candidates || []).filter(c => enrichmentMap[c.login]);
+
+  const sorted = [...enrichedOnly].sort((a, b) => {
     if (sortBy === "enriched") {
       const eA = enrichmentMap[a.login]?.overall_score ?? -1;
       const eB = enrichmentMap[b.login]?.overall_score ?? -1;
@@ -40,7 +42,7 @@ export default function LeadsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Shortlist</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {sorted.length} candidates from longlist · enriched with LLM code review
+              {sorted.length} enriched candidates
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -202,7 +204,7 @@ export default function LeadsPage() {
         ) : (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-sm">
-              No shortlist candidates yet. Run a longlist build first to populate candidates.
+              No enriched candidates yet. Run enrichment on longlist candidates to populate the shortlist.
             </p>
           </div>
         )}
