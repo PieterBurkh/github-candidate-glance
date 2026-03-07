@@ -39,7 +39,7 @@ const ALL_NETS: NetDef[] = [
       `topic:react language:TypeScript ${BASE}`,
       `react typescript in:name,description,readme ${BASE}`,
     ],
-    starBands: ["5..50", "50..500", ">=500"],
+    starBands: ["5..20", "20..50", "50..200", "200..500", "500..2000", ">=2000"],
     sorts: ["stars", "updated"],
   },
   {
@@ -50,7 +50,7 @@ const ALL_NETS: NetDef[] = [
       `vite react typescript in:name,description,readme ${BASE}`,
       `remix react typescript in:name,description,readme ${BASE}`,
     ],
-    starBands: ["5..50", "50..500", ">=500"],
+    starBands: ["5..20", "20..50", "50..200", "200..500", "500..2000", ">=2000"],
     sorts: ["stars", "updated"],
   },
   {
