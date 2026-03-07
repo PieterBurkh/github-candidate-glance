@@ -1,6 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+const PAGE_SIZE = 1000;
+
+async function fetchAllRows<T>(
+  buildQuery: (from: number, to: number) => any
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await buildQuery(from, from + PAGE_SIZE - 1);
+    if (error) throw error;
+    all.push(...(data || []));
+    if (!data || data.length < PAGE_SIZE) break;
+    from += PAGE_SIZE;
+  }
+  return all;
+}
+
 export interface Run {
   id: string;
   status: string;
@@ -66,26 +83,22 @@ export function useRuns() {
   return useQuery({
     queryKey: ["runs"],
     queryFn: async () => {
-      const { data: runs, error } = await supabase
-        .from("runs")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+      const runs = await fetchAllRows<any>((from, to) =>
+        supabase.from("runs").select("*").order("created_at", { ascending: false }).range(from, to)
+      );
+      if (runs.length === 0) return [] as Run[];
 
       // Get repo counts per run
-      const runIds = (runs || []).map((r: any) => r.id);
-      if (runIds.length === 0) return [] as Run[];
-
-      const { data: repos } = await supabase
-        .from("repos")
-        .select("run_id");
+      const repos = await fetchAllRows<{ run_id: string }>((from, to) =>
+        supabase.from("repos").select("run_id").range(from, to)
+      );
 
       const countMap = new Map<string, number>();
-      for (const r of repos || []) {
+      for (const r of repos) {
         countMap.set(r.run_id, (countMap.get(r.run_id) || 0) + 1);
       }
 
-      return (runs || []).map((r: any) => ({
+      return runs.map((r: any) => ({
         ...r,
         repo_count: countMap.get(r.id) || 0,
       })) as Run[];
@@ -134,36 +147,29 @@ export function useLeads(runId?: string) {
     queryFn: async () => {
       // Get people who have evidence linked to repos from this run
       if (runId) {
-        const { data: repos } = await supabase
-          .from("repos")
-          .select("id")
-          .eq("run_id", runId);
-        const repoIds = (repos || []).map((r: any) => r.id);
+        const repos = await fetchAllRows<{ id: string }>((from, to) =>
+          supabase.from("repos").select("id").eq("run_id", runId).range(from, to)
+        );
+        const repoIds = repos.map((r) => r.id);
         if (repoIds.length === 0) return [] as Person[];
 
-        const { data: evidence } = await supabase
-          .from("person_evidence")
-          .select("person_id")
-          .in("repo_id", repoIds);
-        const personIds = [...new Set((evidence || []).map((e: any) => e.person_id))];
+        const evidence = await fetchAllRows<{ person_id: string }>((from, to) =>
+          supabase.from("person_evidence").select("person_id").in("repo_id", repoIds).range(from, to)
+        );
+        const personIds = [...new Set(evidence.map((e) => e.person_id))];
         if (personIds.length === 0) return [] as Person[];
 
-        const { data: people, error } = await supabase
-          .from("people")
-          .select("*")
-          .in("id", personIds)
-          .order("overall_score", { ascending: false });
-        if (error) throw error;
-        return (people || []) as Person[];
+        const people = await fetchAllRows<Person>((from, to) =>
+          supabase.from("people").select("*").in("id", personIds).order("overall_score", { ascending: false }).range(from, to)
+        );
+        return people;
       }
 
       // All people
-      const { data, error } = await supabase
-        .from("people")
-        .select("*")
-        .order("overall_score", { ascending: false });
-      if (error) throw error;
-      return (data || []) as Person[];
+      const people = await fetchAllRows<Person>((from, to) =>
+        supabase.from("people").select("*").order("overall_score", { ascending: false }).range(from, to)
+      );
+      return people;
     },
     refetchInterval: 10000,
   });
@@ -207,11 +213,9 @@ export function useAllRepos() {
   return useQuery({
     queryKey: ["all-repos"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("repos")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+      const data = await fetchAllRows<Repo>((from, to) =>
+        supabase.from("repos").select("*").order("created_at", { ascending: false }).range(from, to)
+      );
 
       // Deduplicate by full_name, keeping entry with most matched_nets
       const map = new Map<string, Repo & { run_ids: string[] }>();
@@ -236,9 +240,10 @@ export function useRunCount() {
   return useQuery({
     queryKey: ["run-count"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("runs").select("id");
-      if (error) throw error;
-      return (data || []).length;
+      const data = await fetchAllRows<{ id: string }>((from, to) =>
+        supabase.from("runs").select("id").range(from, to)
+      );
+      return data.length;
     },
   });
 }
@@ -248,13 +253,10 @@ export function useRunRepos(runId: string) {
   return useQuery({
     queryKey: ["run-repos", runId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("repos")
-        .select("*")
-        .eq("run_id", runId)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data || []) as Repo[];
+      const data = await fetchAllRows<Repo>((from, to) =>
+        supabase.from("repos").select("*").eq("run_id", runId).order("created_at", { ascending: false }).range(from, to)
+      );
+      return data;
     },
     enabled: !!runId,
   });
