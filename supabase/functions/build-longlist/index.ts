@@ -391,18 +391,41 @@ async function processLonglist(longlistRunId: string) {
 
   console.log(`Longlist run ${longlistRunId} paused: ${totalProcessed} processed this round, ${pendingNow} pending`);
 
-  // Auto-continue: re-invoke self to keep processing
-  const functionUrl = `${SUPABASE_URL}/functions/v1/build-longlist`;
-  fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify({ longlistRunId }),
-  }).catch(err => console.error("Auto-continue failed:", err));
+  // Auto-continue only if we made progress; stop if rate-limited with 0 progress
+  if (totalProcessed > 0 || !rateLimited) {
+    const functionUrl = `${SUPABASE_URL}/functions/v1/build-longlist`;
+    fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+      body: JSON.stringify({ longlistRunId }),
+    }).catch(err => console.error("Auto-continue failed:", err));
 
-  console.log(`Auto-continuing longlist run ${longlistRunId}...`);
+    console.log(`Auto-continuing longlist run ${longlistRunId}...`);
+  } else {
+    // Rate-limited and 0 progress — check reset time and stop
+    try {
+      const rlHeaders: Record<string, string> = { "User-Agent": "lovable-longlist-builder" };
+      if (GITHUB_TOKEN) rlHeaders.Authorization = `Bearer ${GITHUB_TOKEN}`;
+      const rlRaw = await fetch("https://api.github.com/rate_limit", { headers: rlHeaders });
+      const rlData = await rlRaw.json();
+      const resetAt = rlData?.rate?.reset;
+      const waitMs = resetAt ? (resetAt * 1000 - Date.now()) : 3600_000;
+      const waitMin = Math.ceil(waitMs / 60000);
+
+      await sb.from("longlist_runs").update({
+        status: "paused",
+        progress: { stage: "rate_limited", total: totalCandidates, scored: scoredCount, discarded: discardedNow, pending: pendingNow, rate_limited: true, reset_at: resetAt, wait_minutes: waitMin },
+        updated_at: new Date().toISOString(),
+      }).eq("id", longlistRunId);
+
+      console.log(`Rate limited. Resets in ${waitMin} minutes. Stopping auto-continue for ${longlistRunId}.`);
+    } catch (rlErr) {
+      console.error("Failed to fetch rate limit info:", rlErr);
+    }
+  }
 }
 
 Deno.serve(async (req) => {
