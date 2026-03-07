@@ -1,7 +1,7 @@
 import {
   Play, Loader2, CheckCircle2, Clock, Plus, Pause, XCircle,
 } from "lucide-react";
-import { useShortlistRuns, useStartShortlistRun, useResumeShortlistRun } from "@/hooks/useShortlistPipeline";
+import { useShortlistRuns, useStartShortlistRun, useResumeShortlistRun, usePauseShortlistRun } from "@/hooks/useShortlistPipeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,7 @@ export default function ShortlistRunsPage() {
               const StatusIcon = config.icon;
               const p = run.progress || {};
               const canResume = run.status === "paused";
+              const canPause = run.status === "running";
 
               return (
                 <Card key={run.id} className="hover:shadow-md transition-shadow">
@@ -90,6 +91,16 @@ export default function ShortlistRunsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {canPause && (
+                        <Button
+                          variant="outline" size="sm" className="gap-1.5"
+                          onClick={() => pauseRun.mutate(run.id)}
+                          disabled={pauseRun.isPending}
+                        >
+                          {pauseRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />}
+                          Pause
+                        </Button>
+                      )}
                       {canResume && (
                         <Button
                           variant="default" size="sm" className="gap-1.5"

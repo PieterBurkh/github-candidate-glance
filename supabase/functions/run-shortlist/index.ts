@@ -83,6 +83,13 @@ async function processShortlist(shortlistRunId: string) {
   for (let i = 0; i < pendingLogins.length; i += BATCH_SIZE) {
     if (timedOut() || rateLimited) break;
 
+    // Cooperative pause check
+    const { data: runCheck } = await sb.from("shortlist_runs").select("status").eq("id", shortlistRunId).single();
+    if (runCheck?.status === "paused") {
+      console.log(`Shortlist run ${shortlistRunId} paused by user. Stopping.`);
+      return;
+    }
+
     const batch = pendingLogins.slice(i, i + BATCH_SIZE);
 
     const results = await Promise.allSettled(
