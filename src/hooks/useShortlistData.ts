@@ -20,6 +20,7 @@ async function fetchAllRows<T>(
 
 interface EnrichmentEntry {
   overall_score: number;
+  shortlist_status: string;
   evidence: any[];
 }
 
@@ -53,6 +54,7 @@ export function useShortlistEnrichment() {
       for (const p of people) {
         map[p.login] = {
           overall_score: p.overall_score,
+          shortlist_status: p.shortlist_status || "pending",
           evidence: evidenceByPerson.get(p.id) || [],
         };
       }

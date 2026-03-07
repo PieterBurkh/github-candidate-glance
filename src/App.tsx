@@ -13,6 +13,8 @@ import LonglistRunsPage from "./pages/LonglistRunsPage";
 import LonglistResultsPage from "./pages/LonglistResultsPage";
 import ApproachPage from "./pages/ApproachPage";
 import LonglistApproachPage from "./pages/LonglistApproachPage";
+import ShortlistApproachPage from "./pages/ShortlistApproachPage";
+import ShortlistRunsPage from "./pages/ShortlistRunsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/longlist-runs" element={<LonglistRunsPage />} />
           <Route path="/longlist-results" element={<LonglistResultsPage />} />
           <Route path="/shortlist" element={<LeadsPage />} />
+          <Route path="/shortlist-runs" element={<ShortlistRunsPage />} />
+          <Route path="/shortlist-approach" element={<ShortlistApproachPage />} />
           <Route path="/approach" element={<ApproachPage />} />
           <Route path="/longlist-approach" element={<LonglistApproachPage />} />
           <Route path="/runs/:runId/longlist" element={<LonglistPage />} />

@@ -19,11 +19,17 @@ import {
 
 export default function LeadsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "enriched">("enriched");
   const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
 
-  const enrichedOnly = (candidates || []).filter(c => enrichmentMap[c.login]);
+  const enrichedOnly = (candidates || []).filter(c => {
+    const e = enrichmentMap[c.login];
+    if (!e) return false;
+    if (statusFilter && e.shortlist_status !== statusFilter) return false;
+    return true;
+  });
 
   const sorted = [...enrichedOnly].sort((a, b) => {
     if (sortBy === "enriched") {
@@ -46,6 +52,18 @@ export default function LeadsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="SHORTLIST">Shortlist</SelectItem>
+                <SelectItem value="NEEDS_REVIEW">Needs Review</SelectItem>
+                <SelectItem value="NO">No</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={tierFilter || "all"} onValueChange={(v) => setTierFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-36">
                 <SelectValue placeholder="All tiers" />
@@ -79,6 +97,7 @@ export default function LeadsPage() {
                   <TableHead>Candidate</TableHead>
                   <TableHead className="w-20 text-right">Pre-score</TableHead>
                   <TableHead className="w-24">Tier</TableHead>
+                  <TableHead className="w-28">Status</TableHead>
                   <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Enriched</TableHead>
@@ -129,6 +148,17 @@ export default function LeadsPage() {
                         >
                           {c.selection_tier}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const status = enrichment?.shortlist_status || "pending";
+                          const variant = status === "SHORTLIST" ? "default" : status === "NEEDS_REVIEW" ? "secondary" : "outline";
+                          return (
+                            <Badge variant={variant} className="text-[10px]">
+                              {status === "NEEDS_REVIEW" ? "Needs Review" : status.charAt(0) + status.slice(1).toLowerCase()}
+                            </Badge>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         {h?.followers != null ? (
