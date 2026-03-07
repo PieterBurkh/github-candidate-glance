@@ -110,8 +110,6 @@ export default function LeadsPage() {
                   const h = c.hydration as any;
                   const enrichment = enrichmentMap[c.login];
                   const rubric = enrichment?.evidence?.find((e: any) => e.criterion === "shortlist_rubric")?.evidence as any;
-                  const mustHaves = rubric?.must_haves as Record<string, any> | undefined;
-                  const niceToHaves = rubric?.nice_to_haves as Record<string, any> | undefined;
 
                   return (
                     <TableRow key={c.id}>
