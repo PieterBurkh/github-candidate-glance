@@ -22,7 +22,7 @@ export default function LonglistRunsPage() {
   const resumeRun = useResumeLonglistRun();
 
   const handleStart = async () => {
-    await startRun.mutateAsync();
+    await startRun.mutateAsync(undefined);
   };
 
   return (
