@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 import { FileText, Search, Users, List, ListFilter, BookOpen } from "lucide-react";
 
 const links = [
-  { to: "/", label: "Runs", icon: Search },
-  { to: "/longlist", label: "Longlist", icon: List },
+  { to: "/", label: "Initial list runs", icon: Search },
+  { to: "/longlist", label: "Initial list", icon: List },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
-  { to: "/approach", label: "Approach", icon: BookOpen },
+  { to: "/approach", label: "Initial list approach", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
 ];
 
