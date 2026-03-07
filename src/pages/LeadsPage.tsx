@@ -101,8 +101,7 @@ export default function LeadsPage() {
                   <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Enriched</TableHead>
-                  <TableHead className="min-w-[180px]">Must-haves</TableHead>
-                  <TableHead className="min-w-[180px]">Nice-to-haves</TableHead>
+                  <TableHead className="min-w-[280px]">Assessment</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
@@ -111,8 +110,6 @@ export default function LeadsPage() {
                   const h = c.hydration as any;
                   const enrichment = enrichmentMap[c.login];
                   const rubric = enrichment?.evidence?.find((e: any) => e.criterion === "shortlist_rubric")?.evidence as any;
-                  const mustHaves = rubric?.must_haves as Record<string, any> | undefined;
-                  const niceToHaves = rubric?.nice_to_haves as Record<string, any> | undefined;
 
                   return (
                     <TableRow key={c.id}>
@@ -190,53 +187,15 @@ export default function LeadsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {mustHaves ? (
+                        {rubric?.assessment ? (
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className="cursor-help">
-                                <Badge
-                                  variant={rubric.must_avg >= 0.6 ? "default" : rubric.must_avg >= 0.4 ? "secondary" : "outline"}
-                                  className="text-[10px] mb-1"
-                                >
-                                  {(rubric.must_avg * 100).toFixed(0)}%
-                                </Badge>
-                                {rubric.must_haves_commentary && (
-                                  <p className="text-[11px] text-muted-foreground line-clamp-2">{rubric.must_haves_commentary}</p>
-                                )}
-                              </div>
+                              <p className="text-[11px] text-muted-foreground line-clamp-3 cursor-help max-w-[280px]">
+                                {rubric.assessment}
+                              </p>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-xs text-xs space-y-0.5">
-                              {Object.entries(mustHaves).map(([key, val]: [string, any]) => (
-                                <div key={key}><span className="font-medium">{key.replace(/_/g, " ")}:</span> {(val.score * 100).toFixed(0)}%</div>
-                              ))}
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : enrichment ? (
-                          <span className="text-xs text-muted-foreground italic">Pending</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {niceToHaves ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="cursor-help">
-                                <Badge
-                                  variant={rubric.nice_avg >= 0.6 ? "default" : rubric.nice_avg >= 0.4 ? "secondary" : "outline"}
-                                  className="text-[10px] mb-1"
-                                >
-                                  {(rubric.nice_avg * 100).toFixed(0)}%
-                                </Badge>
-                                {rubric.nice_to_haves_commentary && (
-                                  <p className="text-[11px] text-muted-foreground line-clamp-2">{rubric.nice_to_haves_commentary}</p>
-                                )}
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-xs text-xs space-y-0.5">
-                              {Object.entries(niceToHaves).map(([key, val]: [string, any]) => (
-                                <div key={key}><span className="font-medium">{key.replace(/_/g, " ")}:</span> {(val.score * 100).toFixed(0)}%</div>
-                              ))}
+                            <TooltipContent side="bottom" className="max-w-sm text-xs">
+                              {rubric.assessment}
                             </TooltipContent>
                           </Tooltip>
                         ) : enrichment ? (

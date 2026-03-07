@@ -214,9 +214,8 @@ You will receive evidence from their top repositories. Score each criterion on a
 11. wasm — WebAssembly usage, Rust/C++ to WASM compilation, performance-critical modules
 12. canvas_webgl — Canvas 2D, WebGL, Three.js, PixiJS, data viz, custom rendering
 
-**Commentary requirements:**
-- Provide must_haves_commentary: 1-2 sentences explaining why you gave those must-have scores, citing specific repos or evidence
-- Provide nice_to_haves_commentary: 1-2 sentences explaining why you gave those nice-to-have scores, citing specific repos or evidence
+**Assessment requirement:**
+- Provide an assessment: 2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed.
 
 **Anti-gaming rules:**
 - Downweight template/boilerplate repos (create-react-app defaults, tutorial code)
@@ -265,15 +264,13 @@ ${evidenceBlock}`;
               wasm: buildCriterionSchema("wasm", ""),
               canvas_webgl: buildCriterionSchema("canvas_webgl", ""),
               summary: { type: "string", description: "1-2 sentence overall assessment" },
-              must_haves_commentary: { type: "string", description: "1-2 sentence summary explaining the must-have scores and reasoning" },
-              nice_to_haves_commentary: { type: "string", description: "1-2 sentence summary explaining the nice-to-have scores and reasoning" },
+              assessment: { type: "string", description: "2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed." },
             },
             required: [
               "react_typescript", "rich_app_architecture", "docs_versioning",
               "performance_profiling", "technical_leadership", "english_communication",
               "bpmn_uml_uis", "wcag_accessibility", "semver_library_maintenance",
-              "crdts", "wasm", "canvas_webgl", "summary",
-              "must_haves_commentary", "nice_to_haves_commentary",
+              "crdts", "wasm", "canvas_webgl", "summary", "assessment",
             ],
             additionalProperties: false,
           },
@@ -425,8 +422,7 @@ serve(async (req) => {
       nice_avg: Math.round(niceAvg * 100) / 100,
       overall_pct: overallPct,
       summary: scores.summary || "",
-      must_haves_commentary: scores.must_haves_commentary || "",
-      nice_to_haves_commentary: scores.nice_to_haves_commentary || "",
+      assessment: scores.assessment || "",
       repos_evaluated: repoEvidences.map(r => r.full_name),
     };
 
