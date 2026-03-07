@@ -13,6 +13,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const DEADLINE_MS = 140_000;
 const BATCH_SIZE = 50;
 const CONCURRENCY = 10;
+const PAGE_SIZE = 500;
+const INLINE_EXPLOIT_THRESHOLD = 80;
 
 function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -198,7 +200,22 @@ async function processLonglist(longlistRunId: string) {
     let query = sb.from("repos").select("owner_login");
     if (run.source_run_id) query = query.eq("run_id", run.source_run_id);
     const { data: repos } = await query;
-    const logins = [...new Set((repos || []).map((r: any) => r.owner_login))];
+    const allLogins = [...new Set((repos || []).map((r: any) => r.owner_login))];
+
+    // Deduplicate: exclude logins already processed in ANY previous longlist run
+    const existingLogins = new Set<string>();
+    for (let i = 0; i < allLogins.length; i += PAGE_SIZE) {
+      const batch = allLogins.slice(i, i + PAGE_SIZE);
+      const { data: existing } = await sb
+        .from("longlist_candidates")
+        .select("login")
+        .in("login", batch)
+        .neq("longlist_run_id", longlistRunId);
+      if (existing) existing.forEach((r: any) => existingLogins.add(r.login));
+    }
+
+    const logins = allLogins.filter(l => !existingLogins.has(l));
+    console.log(`Seeding: ${allLogins.length} total logins, ${existingLogins.size} already processed, ${logins.length} new`);
 
     for (let i = 0; i < logins.length; i += 500) {
       const batch = logins.slice(i, i + 500).map((login) => ({
@@ -239,7 +256,7 @@ async function processLonglist(longlistRunId: string) {
         updates.push(r.value);
       }
 
-      // Batch write all updates
+      // Batch write all updates — inline exploit for high scorers
       const now = new Date().toISOString();
       await Promise.all(updates.map(u => {
         const payload: any = { stage: u.stage, updated_at: now };
@@ -249,6 +266,9 @@ async function processLonglist(longlistRunId: string) {
         if (u.repo_signals) payload.repo_signals = u.repo_signals;
         if (u.pre_score !== undefined) payload.pre_score = u.pre_score;
         if (u.pre_confidence !== undefined) payload.pre_confidence = u.pre_confidence;
+        if (u.stage === "scored" && (u.pre_score || 0) >= INLINE_EXPLOIT_THRESHOLD) {
+          payload.selection_tier = "exploit";
+        }
         return sb.from("longlist_candidates").update(payload).eq("id", u.id);
       }));
 
@@ -262,21 +282,33 @@ async function processLonglist(longlistRunId: string) {
     .eq("longlist_run_id", longlistRunId).in("stage", ["pending", "hydrated"]);
 
   if (remaining === 0 && !rateLimited && !timedOut()) {
-    const { data: scored } = await sb
+    // Count how many exploit candidates were already assigned inline
+    const { count: inlineExploitCount } = await sb
+      .from("longlist_candidates").select("id", { count: "exact", head: true })
+      .eq("longlist_run_id", longlistRunId).eq("selection_tier", "exploit");
+
+    const exploitSlots = Math.max(0, 800 - (inlineExploitCount || 0));
+
+    // Get scored candidates without a selection_tier, ordered by score
+    const { data: unassigned } = await sb
       .from("longlist_candidates").select("id, pre_score, pre_confidence, repo_signals")
-      .eq("longlist_run_id", longlistRunId).eq("stage", "scored")
+      .eq("longlist_run_id", longlistRunId).eq("stage", "scored").is("selection_tier", null)
       .order("pre_score", { ascending: false }).range(0, 9999);
 
-    if (scored && scored.length > 0) {
-      const exploitIds = scored.slice(0, 800).map((c) => c.id);
-      for (let i = 0; i < exploitIds.length; i += 500) {
-        await sb.from("longlist_candidates")
-          .update({ selection_tier: "exploit", updated_at: new Date().toISOString() })
-          .in("id", exploitIds.slice(i, i + 500));
+    if (unassigned && unassigned.length > 0) {
+      // Fill remaining exploit slots
+      if (exploitSlots > 0) {
+        const fillExploitIds = unassigned.slice(0, exploitSlots).map((c) => c.id);
+        for (let i = 0; i < fillExploitIds.length; i += 500) {
+          await sb.from("longlist_candidates")
+            .update({ selection_tier: "exploit", updated_at: new Date().toISOString() })
+            .in("id", fillExploitIds.slice(i, i + 500));
+        }
       }
 
-      const remainingScored = scored.slice(800);
-      const exploreCandidates = remainingScored
+      // Explore tier from remaining unassigned
+      const afterExploit = unassigned.slice(exploitSlots);
+      const exploreCandidates = afterExploit
         .filter((c) => {
           const sigs = c.repo_signals as Record<string, any>;
           return Object.values(sigs).reduce((sum: number, s: any) =>
@@ -292,10 +324,13 @@ async function processLonglist(longlistRunId: string) {
         }
       }
 
+      // Discard the rest
       await sb.from("longlist_candidates")
         .update({ stage: "discarded", discard_reason: "below_threshold", selection_tier: null, updated_at: new Date().toISOString() })
         .eq("longlist_run_id", longlistRunId).eq("stage", "scored").is("selection_tier", null);
     }
+
+    console.log(`Stage 3: ${inlineExploitCount} inline exploit + ${exploitSlots} slots filled`);
 
     const { count: totalCount } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId);
     const { count: selectedCount } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId).not("selection_tier", "is", null);
