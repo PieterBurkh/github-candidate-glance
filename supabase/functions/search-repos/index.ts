@@ -20,11 +20,125 @@ async function githubFetch(url: string) {
   return fetch(url, { headers });
 }
 
-// Default query packs for Criterion #1
-const DEFAULT_QUERIES = [
-  "topic:react language:TypeScript archived:false fork:false",
-  "topic:nextjs language:TypeScript archived:false fork:false",
-  "topic:tailwindcss topic:react language:TypeScript archived:false fork:false",
+// ── Net definitions ──────────────────────────────────────────────────
+interface NetDef {
+  id: string;
+  label: string;
+  queries: string[];
+  starBands: string[];  // e.g. ["5..50","50..500",">=500"] or [">=1"]
+  sorts: string[];      // e.g. ["stars","updated"]
+}
+
+const BASE = "archived:false fork:false";
+
+const ALL_NETS: NetDef[] = [
+  // A — Core stack
+  {
+    id: "core-stack",
+    label: "Core Stack",
+    queries: [
+      `topic:react language:TypeScript ${BASE}`,
+      `react typescript in:name,description,readme ${BASE}`,
+    ],
+    starBands: ["5..50", "50..500", ">=500"],
+    sorts: ["stars", "updated"],
+  },
+  // B — Meta-frameworks
+  {
+    id: "meta-frameworks",
+    label: "Meta-frameworks",
+    queries: [
+      `topic:nextjs language:TypeScript ${BASE}`,
+      `vite react typescript in:name,description,readme ${BASE}`,
+      `remix react typescript in:name,description,readme ${BASE}`,
+    ],
+    starBands: ["5..50", "50..500", ">=500"],
+    sorts: ["stars", "updated"],
+  },
+  // C — Component libraries / docs
+  {
+    id: "component-libs",
+    label: "Component Libraries",
+    queries: [
+      `storybook react in:readme ${BASE}`,
+      `docusaurus react in:readme ${BASE}`,
+      `typedoc typescript in:readme ${BASE}`,
+    ],
+    starBands: [">=5"],
+    sorts: ["stars", "updated"],
+  },
+  // D — Versioning discipline
+  {
+    id: "versioning",
+    label: "Versioning",
+    queries: [
+      `changesets in:readme react ${BASE}`,
+      `semantic-release in:readme ${BASE}`,
+      `changelog in:readme react typescript ${BASE}`,
+    ],
+    starBands: [">=3"],
+    sorts: ["stars", "updated"],
+  },
+  // E — Performance
+  {
+    id: "performance",
+    label: "Performance",
+    queries: [
+      `web-vitals in:readme react ${BASE}`,
+      `lighthouse in:readme react ${BASE}`,
+      `profiler in:readme react ${BASE}`,
+    ],
+    starBands: [">=2"],
+    sorts: ["stars", "updated"],
+  },
+  // F — Accessibility
+  {
+    id: "a11y",
+    label: "Accessibility",
+    queries: [
+      `wcag in:readme react ${BASE}`,
+      `aria in:readme react ${BASE}`,
+      `a11y in:readme react ${BASE}`,
+    ],
+    starBands: [">=1"],
+    sorts: ["stars", "updated"],
+  },
+  // G — Complex UI patterns
+  {
+    id: "complex-ui",
+    label: "Complex UI",
+    queries: [
+      `bpmn in:readme react ${BASE}`,
+      `reactflow in:readme ${BASE}`,
+      `xstate in:readme react ${BASE}`,
+    ],
+    starBands: [">=1"],
+    sorts: ["stars", "updated"],
+  },
+  // H — CRDT / realtime
+  {
+    id: "crdt-realtime",
+    label: "CRDT / Realtime",
+    queries: [
+      `yjs in:readme react ${BASE}`,
+      `automerge in:readme react ${BASE}`,
+      `crdt in:readme ${BASE}`,
+    ],
+    starBands: [">=1"],
+    sorts: ["stars", "updated"],
+  },
+  // I — WASM
+  {
+    id: "wasm",
+    label: "WASM",
+    queries: [
+      `webassembly in:readme react ${BASE}`,
+      `wasm-pack in:readme ${BASE}`,
+      `wasm-bindgen in:readme ${BASE}`,
+    ],
+    starBands: [">=1"],
+    sorts: ["stars", "updated"],
+  },
 ];
 
 serve(async (req) => {
@@ -34,66 +148,100 @@ serve(async (req) => {
 
   try {
     const {
-      queries = DEFAULT_QUERIES,
-      minStars = 5,
-      pushedAfter = "",
+      nets: requestedNets,
       perPage = 30,
       maxPages = 1,
     } = await req.json().catch(() => ({}));
+
+    // Filter nets if specified, otherwise use all
+    const netsToRun = requestedNets && requestedNets.length > 0
+      ? ALL_NETS.filter((n) => requestedNets.includes(n.id))
+      : ALL_NETS;
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Create run
     const { data: run, error: runErr } = await supabase
       .from("runs")
-      .insert({ status: "running", search_params: { queries, minStars, pushedAfter, perPage, maxPages } })
+      .insert({
+        status: "running",
+        search_params: {
+          nets: netsToRun.map((n) => n.id),
+          perPage,
+          maxPages,
+        },
+      })
       .select("id")
       .single();
     if (runErr) throw new Error(`Failed to create run: ${runErr.message}`);
 
-    const seen = new Set<string>();
-    const repos: { run_id: string; full_name: string; metadata: any; owner_login: string }[] = [];
+    // Track repos: full_name -> repo data (merge matched_nets)
+    const repoMap = new Map<string, {
+      run_id: string;
+      full_name: string;
+      metadata: any;
+      owner_login: string;
+    }>();
 
-    for (const baseQuery of queries) {
-      for (let page = 1; page <= maxPages; page++) {
-        let q = baseQuery;
-        if (minStars > 0) q += ` stars:>=${minStars}`;
-        if (pushedAfter) q += ` pushed:>=${pushedAfter}`;
+    for (const net of netsToRun) {
+      for (const query of net.queries) {
+        for (const band of net.starBands) {
+          for (const sort of net.sorts) {
+            for (let page = 1; page <= maxPages; page++) {
+              const q = `${query} stars:${band}`;
+              const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${sort}&order=desc&per_page=${perPage}&page=${page}`;
 
-        const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${perPage}&page=${page}`;
-        const res = await githubFetch(url);
-        if (!res.ok) {
-          console.error(`Search failed for query "${q}": ${res.status}`);
-          continue;
+              const res = await githubFetch(url);
+              if (!res.ok) {
+                console.error(`Search failed [${net.id}] "${q}" sort=${sort}: ${res.status}`);
+                // If rate-limited, wait and skip
+                if (res.status === 403 || res.status === 429) {
+                  await new Promise((r) => setTimeout(r, 5000));
+                }
+                continue;
+              }
+
+              const data = await res.json();
+              for (const item of data.items || []) {
+                // Skip non-User owners (organizations, bots)
+                if (item.owner?.type !== "User") continue;
+
+                const existing = repoMap.get(item.full_name);
+                if (existing) {
+                  // Merge net into matched_nets
+                  const nets = existing.metadata.matched_nets as string[];
+                  if (!nets.includes(net.id)) nets.push(net.id);
+                } else {
+                  repoMap.set(item.full_name, {
+                    run_id: run.id,
+                    full_name: item.full_name,
+                    owner_login: item.owner?.login || "",
+                    metadata: {
+                      stars: item.stargazers_count,
+                      forks: item.forks_count,
+                      topics: item.topics || [],
+                      language: item.language,
+                      description: item.description,
+                      created_at: item.created_at,
+                      pushed_at: item.pushed_at,
+                      html_url: item.html_url,
+                      default_branch: item.default_branch,
+                      owner_type: item.owner?.type || "Unknown",
+                      matched_nets: [net.id],
+                    },
+                  });
+                }
+              }
+
+              // Delay to respect rate limits
+              await new Promise((r) => setTimeout(r, 300));
+            }
+          }
         }
-        const data = await res.json();
-        for (const item of data.items || []) {
-          if (seen.has(item.full_name)) continue;
-          // Skip non-User owners (organizations, bots)
-          if (item.owner?.type !== "User") continue;
-          seen.add(item.full_name);
-          repos.push({
-            run_id: run.id,
-            full_name: item.full_name,
-            owner_login: item.owner?.login || "",
-            metadata: {
-              stars: item.stargazers_count,
-              forks: item.forks_count,
-              topics: item.topics || [],
-              language: item.language,
-              description: item.description,
-              created_at: item.created_at,
-              pushed_at: item.pushed_at,
-              html_url: item.html_url,
-              default_branch: item.default_branch,
-              owner_type: item.owner?.type || "Unknown",
-            },
-          });
-        }
-        // Small delay between pages
-        await new Promise((r) => setTimeout(r, 200));
       }
     }
+
+    const repos = Array.from(repoMap.values());
 
     // Insert repos in batches
     const batchSize = 50;
@@ -104,7 +252,10 @@ serve(async (req) => {
     }
 
     // Update run status
-    await supabase.from("runs").update({ status: "pending", updated_at: new Date().toISOString() }).eq("id", run.id);
+    await supabase
+      .from("runs")
+      .update({ status: "pending", updated_at: new Date().toISOString() })
+      .eq("id", run.id);
 
     return new Response(
       JSON.stringify({ runId: run.id, repoCount: repos.length }),

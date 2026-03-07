@@ -97,7 +97,7 @@ export function useRuns() {
 export function useStartRun() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { minStars?: number; pushedAfter?: string; perPage?: number }) => {
+    mutationFn: async (params: { nets?: string[]; minStars?: number; pushedAfter?: string; perPage?: number }) => {
       const { data, error } = await supabase.functions.invoke("search-repos", {
         body: params,
       });
@@ -199,6 +199,23 @@ export function usePersonEvidence(personId: string) {
       return (data || []) as PersonEvidence[];
     },
     enabled: !!personId,
+  });
+}
+
+// --- Run repos (longlist) ---
+export function useRunRepos(runId: string) {
+  return useQuery({
+    queryKey: ["run-repos", runId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repos")
+        .select("*")
+        .eq("run_id", runId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Repo[];
+    },
+    enabled: !!runId,
   });
 }
 

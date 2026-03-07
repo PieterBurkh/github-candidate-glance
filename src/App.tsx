@@ -7,6 +7,7 @@ import RunsPage from "./pages/RunsPage";
 import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
 import JobDescription from "./pages/JobDescription";
+import LonglistPage from "./pages/LonglistPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,6 +20,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RunsPage />} />
+          <Route path="/runs/:runId/longlist" element={<LonglistPage />} />
           <Route path="/runs/:runId/leads" element={<LeadsPage />} />
           <Route path="/leads" element={<LeadsPage />} />
           <Route path="/leads/:login" element={<LeadDetailPage />} />
