@@ -197,10 +197,19 @@ async function processLonglist(longlistRunId: string) {
     .from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId);
 
   if (!existingCount || existingCount === 0) {
-    let query = sb.from("repos").select("owner_login");
-    if (run.source_run_id) query = query.eq("run_id", run.source_run_id);
-    const { data: repos } = await query;
-    const allLogins = [...new Set((repos || []).map((r: any) => r.owner_login))];
+    // Fetch ALL owner_logins from repos, paginated to avoid 1000-row limit
+    const allRepoLogins: string[] = [];
+    let from = 0;
+    while (true) {
+      let query = sb.from("repos").select("owner_login");
+      if (run.source_run_id) query = query.eq("run_id", run.source_run_id);
+      const { data: page } = await query.range(from, from + PAGE_SIZE - 1);
+      if (!page || page.length === 0) break;
+      allRepoLogins.push(...page.map((r: any) => r.owner_login));
+      if (page.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+    const allLogins = [...new Set(allRepoLogins)];
 
     // Deduplicate: exclude logins already processed in ANY previous longlist run
     const existingLogins = new Set<string>();
