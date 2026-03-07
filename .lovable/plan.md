@@ -1,13 +1,12 @@
 
 
-## Delete the latest longlist run
+## Fix: Flush DB after every batch + increase parallelism
 
-There is one longlist run: `29618a1f-1e8e-4439-bd1d-3d0b5b36c8cd` (status: paused, created Mar 7).
+**Single file change: `supabase/functions/build-longlist/index.ts`**
 
-### Action
-Run a database migration to delete:
-1. All `longlist_candidates` rows where `longlist_run_id = '29618a1f-...'`
-2. The `longlist_runs` row itself
+1. Change `BATCH_SIZE` from 5 to 20
+2. Remove `DB_FLUSH_SIZE` constant (no longer needed)
+3. Replace the conditional flush (`if (pendingUpdates.length >= DB_FLUSH_SIZE)`) with unconditional `await flushUpdates()` after every batch
 
-This is a simple two-statement DELETE migration. No code changes needed.
+This ensures each batch of 20 candidates is written to the DB immediately, so the next iteration fetches truly new pending candidates instead of re-processing the same ones.
 
