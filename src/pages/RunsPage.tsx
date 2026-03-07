@@ -11,6 +11,7 @@ import {
   ArrowRight,
   List,
   Pause,
+  AlertTriangle,
 } from "lucide-react";
 import { useRuns, useStartRun, useRunEnrichment, useResumeRun } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
