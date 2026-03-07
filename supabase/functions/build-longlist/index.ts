@@ -282,21 +282,33 @@ async function processLonglist(longlistRunId: string) {
     .eq("longlist_run_id", longlistRunId).in("stage", ["pending", "hydrated"]);
 
   if (remaining === 0 && !rateLimited && !timedOut()) {
-    const { data: scored } = await sb
+    // Count how many exploit candidates were already assigned inline
+    const { count: inlineExploitCount } = await sb
+      .from("longlist_candidates").select("id", { count: "exact", head: true })
+      .eq("longlist_run_id", longlistRunId).eq("selection_tier", "exploit");
+
+    const exploitSlots = Math.max(0, 800 - (inlineExploitCount || 0));
+
+    // Get scored candidates without a selection_tier, ordered by score
+    const { data: unassigned } = await sb
       .from("longlist_candidates").select("id, pre_score, pre_confidence, repo_signals")
-      .eq("longlist_run_id", longlistRunId).eq("stage", "scored")
+      .eq("longlist_run_id", longlistRunId).eq("stage", "scored").is("selection_tier", null)
       .order("pre_score", { ascending: false }).range(0, 9999);
 
-    if (scored && scored.length > 0) {
-      const exploitIds = scored.slice(0, 800).map((c) => c.id);
-      for (let i = 0; i < exploitIds.length; i += 500) {
-        await sb.from("longlist_candidates")
-          .update({ selection_tier: "exploit", updated_at: new Date().toISOString() })
-          .in("id", exploitIds.slice(i, i + 500));
+    if (unassigned && unassigned.length > 0) {
+      // Fill remaining exploit slots
+      if (exploitSlots > 0) {
+        const fillExploitIds = unassigned.slice(0, exploitSlots).map((c) => c.id);
+        for (let i = 0; i < fillExploitIds.length; i += 500) {
+          await sb.from("longlist_candidates")
+            .update({ selection_tier: "exploit", updated_at: new Date().toISOString() })
+            .in("id", fillExploitIds.slice(i, i + 500));
+        }
       }
 
-      const remainingScored = scored.slice(800);
-      const exploreCandidates = remainingScored
+      // Explore tier from remaining unassigned
+      const afterExploit = unassigned.slice(exploitSlots);
+      const exploreCandidates = afterExploit
         .filter((c) => {
           const sigs = c.repo_signals as Record<string, any>;
           return Object.values(sigs).reduce((sum: number, s: any) =>
@@ -312,10 +324,13 @@ async function processLonglist(longlistRunId: string) {
         }
       }
 
+      // Discard the rest
       await sb.from("longlist_candidates")
         .update({ stage: "discarded", discard_reason: "below_threshold", selection_tier: null, updated_at: new Date().toISOString() })
         .eq("longlist_run_id", longlistRunId).eq("stage", "scored").is("selection_tier", null);
     }
+
+    console.log(`Stage 3: ${inlineExploitCount} inline exploit + ${exploitSlots} slots filled`);
 
     const { count: totalCount } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId);
     const { count: selectedCount } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId).not("selection_tier", "is", null);
