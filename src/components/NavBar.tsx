@@ -9,6 +9,7 @@ const links = [
   { to: "/longlist-results", label: "Longlist", icon: Users },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
   { to: "/approach", label: "Initial list approach", icon: BookOpen },
+  { to: "/longlist-approach", label: "Longlist approach", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
 ];
 

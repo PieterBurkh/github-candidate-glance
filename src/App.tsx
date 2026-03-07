@@ -12,6 +12,7 @@ import GlobalLonglistPage from "./pages/GlobalLonglistPage";
 import LonglistRunsPage from "./pages/LonglistRunsPage";
 import LonglistResultsPage from "./pages/LonglistResultsPage";
 import ApproachPage from "./pages/ApproachPage";
+import LonglistApproachPage from "./pages/LonglistApproachPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/longlist-results" element={<LonglistResultsPage />} />
           <Route path="/shortlist" element={<LeadsPage />} />
           <Route path="/approach" element={<ApproachPage />} />
+          <Route path="/longlist-approach" element={<LonglistApproachPage />} />
           <Route path="/runs/:runId/longlist" element={<LonglistPage />} />
           <Route path="/runs/:runId/leads" element={<LeadsPage />} />
           <Route path="/leads/:login" element={<LeadDetailPage />} />
