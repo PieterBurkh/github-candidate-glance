@@ -25,14 +25,13 @@ interface NetDef {
   id: string;
   label: string;
   queries: string[];
-  starBands: string[];  // e.g. ["5..50","50..500",">=500"] or [">=1"]
-  sorts: string[];      // e.g. ["stars","updated"]
+  starBands: string[];
+  sorts: string[];
 }
 
 const BASE = "archived:false fork:false";
 
 const ALL_NETS: NetDef[] = [
-  // A — Core stack
   {
     id: "core-stack",
     label: "Core Stack",
@@ -43,7 +42,6 @@ const ALL_NETS: NetDef[] = [
     starBands: ["5..50", "50..500", ">=500"],
     sorts: ["stars", "updated"],
   },
-  // B — Meta-frameworks
   {
     id: "meta-frameworks",
     label: "Meta-frameworks",
@@ -55,7 +53,6 @@ const ALL_NETS: NetDef[] = [
     starBands: ["5..50", "50..500", ">=500"],
     sorts: ["stars", "updated"],
   },
-  // C — Component libraries / docs
   {
     id: "component-libs",
     label: "Component Libraries",
@@ -67,7 +64,6 @@ const ALL_NETS: NetDef[] = [
     starBands: [">=5"],
     sorts: ["stars", "updated"],
   },
-  // D — Versioning discipline
   {
     id: "versioning",
     label: "Versioning",
@@ -79,7 +75,6 @@ const ALL_NETS: NetDef[] = [
     starBands: [">=3"],
     sorts: ["stars", "updated"],
   },
-  // E — Performance
   {
     id: "performance",
     label: "Performance",
@@ -91,7 +86,6 @@ const ALL_NETS: NetDef[] = [
     starBands: [">=2"],
     sorts: ["stars", "updated"],
   },
-  // F — Accessibility
   {
     id: "a11y",
     label: "Accessibility",
@@ -103,7 +97,6 @@ const ALL_NETS: NetDef[] = [
     starBands: [">=1"],
     sorts: ["stars", "updated"],
   },
-  // G — Complex UI patterns
   {
     id: "complex-ui",
     label: "Complex UI",
@@ -115,7 +108,6 @@ const ALL_NETS: NetDef[] = [
     starBands: [">=1"],
     sorts: ["stars", "updated"],
   },
-  // H — CRDT / realtime
   {
     id: "crdt-realtime",
     label: "CRDT / Realtime",
@@ -127,7 +119,6 @@ const ALL_NETS: NetDef[] = [
     starBands: [">=1"],
     sorts: ["stars", "updated"],
   },
-  // I — WASM
   {
     id: "wasm",
     label: "WASM",
@@ -141,10 +132,49 @@ const ALL_NETS: NetDef[] = [
   },
 ];
 
+// ── Helpers ──────────────────────────────────────────────────────────
+
+const DEADLINE_MS = 140_000; // 140s, well within 150s edge function limit
+const FLUSH_INTERVAL = 20; // flush to DB every N queries
+
+async function flushRepos(
+  supabase: ReturnType<typeof createClient>,
+  repoMap: Map<string, any>,
+  flushedKeys: Set<string>
+) {
+  const toInsert: any[] = [];
+  for (const [key, val] of repoMap) {
+    if (!flushedKeys.has(key)) {
+      toInsert.push(val);
+      flushedKeys.add(key);
+    }
+  }
+  if (toInsert.length === 0) return;
+
+  const batchSize = 50;
+  for (let i = 0; i < toInsert.length; i += batchSize) {
+    const batch = toInsert.slice(i, i + batchSize);
+    const { error } = await supabase.from("repos").upsert(batch, {
+      onConflict: "run_id,full_name",
+      ignoreDuplicates: false,
+    });
+    if (error) {
+      // Fallback: insert ignoring duplicates
+      const { error: insertErr } = await supabase.from("repos").insert(batch);
+      if (insertErr) console.error("Repo insert error:", insertErr.message);
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+  let runId: string | null = null;
+  let timedOut = false;
+  let totalRepos = 0;
 
   try {
     const {
@@ -153,12 +183,9 @@ serve(async (req) => {
       maxPages = 1,
     } = await req.json().catch(() => ({}));
 
-    // Filter nets if specified, otherwise use all
     const netsToRun = requestedNets && requestedNets.length > 0
       ? ALL_NETS.filter((n) => requestedNets.includes(n.id))
       : ALL_NETS;
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Create run
     const { data: run, error: runErr } = await supabase
@@ -174,41 +201,48 @@ serve(async (req) => {
       .select("id")
       .single();
     if (runErr) throw new Error(`Failed to create run: ${runErr.message}`);
+    runId = run.id;
 
-    // Track repos: full_name -> repo data (merge matched_nets)
-    const repoMap = new Map<string, {
-      run_id: string;
-      full_name: string;
-      metadata: any;
-      owner_login: string;
-    }>();
+    const deadline = Date.now() + DEADLINE_MS;
+    const repoMap = new Map<string, any>();
+    const flushedKeys = new Set<string>();
+    let queryCount = 0;
 
     for (const net of netsToRun) {
+      if (Date.now() > deadline) { timedOut = true; break; }
+
       for (const query of net.queries) {
+        if (Date.now() > deadline) { timedOut = true; break; }
+
         for (const band of net.starBands) {
+          if (Date.now() > deadline) { timedOut = true; break; }
+
           for (const sort of net.sorts) {
+            if (Date.now() > deadline) { timedOut = true; break; }
+
             for (let page = 1; page <= maxPages; page++) {
+              if (Date.now() > deadline) { timedOut = true; break; }
+
               const q = `${query} stars:${band}`;
               const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${sort}&order=desc&per_page=${perPage}&page=${page}`;
 
               const res = await githubFetch(url);
+              queryCount++;
+
               if (!res.ok) {
                 console.error(`Search failed [${net.id}] "${q}" sort=${sort}: ${res.status}`);
-                // If rate-limited, wait and skip
                 if (res.status === 403 || res.status === 429) {
-                  await new Promise((r) => setTimeout(r, 5000));
+                  await new Promise((r) => setTimeout(r, 2000));
                 }
                 continue;
               }
 
               const data = await res.json();
               for (const item of data.items || []) {
-                // Skip non-User owners (organizations, bots)
                 if (item.owner?.type !== "User") continue;
 
                 const existing = repoMap.get(item.full_name);
                 if (existing) {
-                  // Merge net into matched_nets
                   const nets = existing.metadata.matched_nets as string[];
                   if (!nets.includes(net.id)) nets.push(net.id);
                 } else {
@@ -233,32 +267,37 @@ serve(async (req) => {
                 }
               }
 
-              // Delay to respect rate limits
-              await new Promise((r) => setTimeout(r, 300));
+              // Flush periodically
+              if (queryCount % FLUSH_INTERVAL === 0) {
+                await flushRepos(supabase, repoMap, flushedKeys);
+                totalRepos = repoMap.size;
+                await supabase.from("runs").update({
+                  updated_at: new Date().toISOString(),
+                  search_params: {
+                    nets: netsToRun.map((n) => n.id),
+                    perPage,
+                    maxPages,
+                    repos_found: totalRepos,
+                  },
+                }).eq("id", run.id);
+              }
+
+              await new Promise((r) => setTimeout(r, 200));
             }
           }
         }
       }
+
+      // Flush after each net
+      await flushRepos(supabase, repoMap, flushedKeys);
     }
 
-    const repos = Array.from(repoMap.values());
-
-    // Insert repos in batches
-    const batchSize = 50;
-    for (let i = 0; i < repos.length; i += batchSize) {
-      const batch = repos.slice(i, i + batchSize);
-      const { error } = await supabase.from("repos").insert(batch);
-      if (error) console.error("Repo insert error:", error.message);
-    }
-
-    // Update run status
-    await supabase
-      .from("runs")
-      .update({ status: "pending", updated_at: new Date().toISOString() })
-      .eq("id", run.id);
+    // Final flush
+    await flushRepos(supabase, repoMap, flushedKeys);
+    totalRepos = repoMap.size;
 
     return new Response(
-      JSON.stringify({ runId: run.id, repoCount: repos.length }),
+      JSON.stringify({ runId: run.id, repoCount: totalRepos, timedOut }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -266,5 +305,17 @@ serve(async (req) => {
       JSON.stringify({ error: err.message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
+  } finally {
+    // Always update run status
+    if (runId) {
+      await supabase.from("runs").update({
+        status: "pending",
+        updated_at: new Date().toISOString(),
+        search_params: {
+          timed_out: timedOut,
+          repos_found: totalRepos,
+        },
+      }).eq("id", runId);
+    }
   }
 });
