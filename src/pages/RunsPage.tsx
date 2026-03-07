@@ -166,8 +166,13 @@ export default function RunsPage() {
                           <Badge variant="outline" className="text-[10px]">
                             {config.label}
                           </Badge>
+                          {(run.search_params as any)?.timed_out && (
+                            <Badge variant="secondary" className="text-[10px] text-amber-600">
+                              Partial (timed out)
+                            </Badge>
+                          )}
                           <span className="text-xs text-muted-foreground">
-                            {run.repo_count} repos
+                            {(run.search_params as any)?.repos_found ?? run.repo_count ?? 0} repos
                           </span>
                           {nets && (
                             <span className="text-xs text-muted-foreground">
