@@ -14,7 +14,178 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      people: {
+        Row: {
+          created_at: string
+          id: string
+          login: string
+          overall_score: number
+          profile: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          login: string
+          overall_score?: number
+          profile?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          login?: string
+          overall_score?: number
+          profile?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      person_evidence: {
+        Row: {
+          created_at: string
+          criterion: string
+          evidence: Json
+          id: string
+          person_id: string
+          repo_id: string | null
+          score: number
+        }
+        Insert: {
+          created_at?: string
+          criterion: string
+          evidence?: Json
+          id?: string
+          person_id: string
+          repo_id?: string | null
+          score?: number
+        }
+        Update: {
+          created_at?: string
+          criterion?: string
+          evidence?: Json
+          id?: string
+          person_id?: string
+          repo_id?: string | null
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "person_evidence_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "person_evidence_repo_id_fkey"
+            columns: ["repo_id"]
+            isOneToOne: false
+            referencedRelation: "repos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repo_signals: {
+        Row: {
+          confidence: number
+          created_at: string
+          criterion: string
+          evidence: Json
+          id: string
+          notes: string | null
+          repo_id: string
+          signal_value: number
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          criterion: string
+          evidence?: Json
+          id?: string
+          notes?: string | null
+          repo_id: string
+          signal_value?: number
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          criterion?: string
+          evidence?: Json
+          id?: string
+          notes?: string | null
+          repo_id?: string
+          signal_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repo_signals_repo_id_fkey"
+            columns: ["repo_id"]
+            isOneToOne: false
+            referencedRelation: "repos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      repos: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          metadata: Json
+          owner_login: string
+          run_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          metadata?: Json
+          owner_login: string
+          run_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          metadata?: Json
+          owner_login?: string
+          run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repos_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runs: {
+        Row: {
+          created_at: string
+          id: string
+          search_params: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          search_params?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          search_params?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
