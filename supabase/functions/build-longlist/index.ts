@@ -11,7 +11,8 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const DEADLINE_MS = 140_000;
-const BATCH_SIZE = 5;
+const BATCH_SIZE = 50;
+const CONCURRENCY = 10;
 
 function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -129,6 +130,52 @@ function scoreCandidate(user: any, userRepos: any[]) {
   };
 }
 
+interface CandidateUpdate {
+  id: string;
+  stage: string;
+  discard_reason?: string;
+  hydration?: any;
+  candidate_repos?: any;
+  repo_signals?: any;
+  pre_score?: number;
+  pre_confidence?: number;
+}
+
+async function processOneCandidate(candidate: { id: string; login: string }): Promise<CandidateUpdate | "rate_limited"> {
+  const [userRes, reposRes] = await Promise.all([
+    githubFetch(`https://api.github.com/users/${candidate.login}`),
+    githubFetch(`https://api.github.com/users/${candidate.login}/repos?per_page=100&sort=stars&direction=desc&type=owner`),
+  ]);
+
+  if (!userRes || !reposRes) return "rate_limited";
+
+  if (userRes.status === 404) {
+    return { id: candidate.id, stage: "discarded", discard_reason: "not_found" };
+  }
+
+  const user = await userRes.json();
+  const userRepos = await reposRes.json();
+
+  if (user.type === "Organization") {
+    return { id: candidate.id, stage: "discarded", discard_reason: "organization" };
+  }
+
+  if ((user.public_repos || 0) === 0 || !Array.isArray(userRepos) || userRepos.length === 0) {
+    return { id: candidate.id, stage: "discarded", discard_reason: "no_repos" };
+  }
+
+  const result = scoreCandidate(user, userRepos);
+  return {
+    id: candidate.id,
+    stage: "scored",
+    hydration: result.hydration,
+    candidate_repos: result.candidateRepos,
+    repo_signals: result.signals,
+    pre_score: result.preScore,
+    pre_confidence: result.preConfidence,
+  };
+}
+
 async function processLonglist(longlistRunId: string) {
   const startTime = Date.now();
   function timedOut() { return (Date.now() - startTime) > (DEADLINE_MS - 8000); }
@@ -166,63 +213,46 @@ async function processLonglist(longlistRunId: string) {
     }).eq("id", longlistRunId);
   }
 
-  // ─── Process candidates ───
+  // ─── Process candidates in parallel ───
   let totalProcessed = 0;
   let rateLimited = false;
 
   while (!timedOut() && !rateLimited) {
     const { data: batch } = await sb
-      .from("longlist_candidates").select("id, login, stage")
+      .from("longlist_candidates").select("id, login")
       .eq("longlist_run_id", longlistRunId).eq("stage", "pending")
       .order("created_at", { ascending: true }).range(0, BATCH_SIZE - 1);
 
     if (!batch || batch.length === 0) break;
 
-    // Process each candidate sequentially to stay within CPU budget
-    for (const candidate of batch) {
+    // Process in chunks of CONCURRENCY
+    for (let i = 0; i < batch.length; i += CONCURRENCY) {
       if (timedOut() || rateLimited) break;
 
-      const [userRes, reposRes] = await Promise.all([
-        githubFetch(`https://api.github.com/users/${candidate.login}`),
-        githubFetch(`https://api.github.com/users/${candidate.login}/repos?per_page=100&sort=stars&direction=desc&type=owner`),
-      ]);
+      const chunk = batch.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(chunk.map(c => processOneCandidate(c)));
 
-      if (!userRes || !reposRes) { rateLimited = true; break; }
-
-      if (userRes.status === 404) {
-        await sb.from("longlist_candidates").update({ stage: "discarded", discard_reason: "not_found", updated_at: new Date().toISOString() }).eq("id", candidate.id);
-        totalProcessed++;
-        continue;
+      const updates: CandidateUpdate[] = [];
+      for (const r of results) {
+        if (r.status === "rejected") continue;
+        if (r.value === "rate_limited") { rateLimited = true; continue; }
+        updates.push(r.value);
       }
 
-      const user = await userRes.json();
-      const userRepos = await reposRes.json();
+      // Batch write all updates
+      const now = new Date().toISOString();
+      await Promise.all(updates.map(u => {
+        const payload: any = { stage: u.stage, updated_at: now };
+        if (u.discard_reason) payload.discard_reason = u.discard_reason;
+        if (u.hydration) payload.hydration = u.hydration;
+        if (u.candidate_repos) payload.candidate_repos = u.candidate_repos;
+        if (u.repo_signals) payload.repo_signals = u.repo_signals;
+        if (u.pre_score !== undefined) payload.pre_score = u.pre_score;
+        if (u.pre_confidence !== undefined) payload.pre_confidence = u.pre_confidence;
+        return sb.from("longlist_candidates").update(payload).eq("id", u.id);
+      }));
 
-      if (user.type === "Organization") {
-        await sb.from("longlist_candidates").update({ stage: "discarded", discard_reason: "organization", updated_at: new Date().toISOString() }).eq("id", candidate.id);
-        totalProcessed++;
-        continue;
-      }
-
-      if ((user.public_repos || 0) === 0 || !Array.isArray(userRepos) || userRepos.length === 0) {
-        await sb.from("longlist_candidates").update({ stage: "discarded", discard_reason: "no_repos", updated_at: new Date().toISOString() }).eq("id", candidate.id);
-        totalProcessed++;
-        continue;
-      }
-
-      const result = scoreCandidate(user, userRepos);
-
-      await sb.from("longlist_candidates").update({
-        stage: "scored",
-        hydration: result.hydration,
-        candidate_repos: result.candidateRepos,
-        repo_signals: result.signals,
-        pre_score: result.preScore,
-        pre_confidence: result.preConfidence,
-        updated_at: new Date().toISOString(),
-      }).eq("id", candidate.id);
-
-      totalProcessed++;
+      totalProcessed += updates.length;
     }
   }
 
@@ -305,7 +335,6 @@ Deno.serve(async (req) => {
     const { longlistRunId } = await req.json();
     if (!longlistRunId) throw new Error("longlistRunId required");
 
-    // Start processing in background — return immediately
     EdgeRuntime.waitUntil(
       processLonglist(longlistRunId).catch(async (error) => {
         console.error(`Longlist run ${longlistRunId} failed:`, error);
