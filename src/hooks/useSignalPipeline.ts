@@ -97,7 +97,7 @@ export function useRuns() {
 export function useStartRun() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { minStars?: number; pushedAfter?: string; perPage?: number }) => {
+    mutationFn: async (params: { nets?: string[]; minStars?: number; pushedAfter?: string; perPage?: number }) => {
       const { data, error } = await supabase.functions.invoke("search-repos", {
         body: params,
       });
