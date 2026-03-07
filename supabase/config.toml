@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.search-repos]
 verify_jwt = false
+
+[functions.build-longlist]
+verify_jwt = false

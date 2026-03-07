@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { FileText, Search, Users, List, ListFilter, BookOpen } from "lucide-react";
+import { FileText, Search, Users, List, ListFilter, BookOpen, Filter } from "lucide-react";
 
 const links = [
   { to: "/", label: "Initial list runs", icon: Search },
   { to: "/longlist", label: "Initial list", icon: List },
+  { to: "/longlist-runs", label: "Longlist runs", icon: Filter },
+  { to: "/longlist-results", label: "Longlist", icon: Users },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
   { to: "/approach", label: "Initial list approach", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
