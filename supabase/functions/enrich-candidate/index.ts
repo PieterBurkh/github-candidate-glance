@@ -13,6 +13,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 const AI_GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
+const FRONTEND_LANGUAGES = new Set(["TypeScript", "JavaScript", "HTML", "CSS", "Vue", "Svelte"]);
+
 function ghHeaders(): Record<string, string> {
   const h: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "lovable-shortlist" };
   if (GITHUB_TOKEN) h.Authorization = `Bearer ${GITHUB_TOKEN}`;
@@ -30,28 +32,35 @@ async function fetchFileContent(fullName: string, path: string, branch: string):
   return res.text();
 }
 
-// Select up to 4 best repos: most starred, most recently pushed, most maintained
+// Select up to 4 best repos, preferring frontend-language repos
 function selectTopRepos(repos: any[]): any[] {
   const nonFork = repos.filter((r: any) => !r.fork && !r.archived);
   if (nonFork.length === 0) return repos.slice(0, 4);
+
+  // Split into frontend-language and other
+  const frontend = nonFork.filter((r: any) => FRONTEND_LANGUAGES.has(r.language));
+  const other = nonFork.filter((r: any) => !FRONTEND_LANGUAGES.has(r.language));
+
+  // Pick from frontend first, then backfill from other
+  const pool = [...frontend, ...other];
 
   const selected: any[] = [];
   const seen = new Set<string>();
 
   // Top starred
-  const byStars = [...nonFork].sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0));
+  const byStars = [...pool].sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0));
   for (const r of byStars.slice(0, 2)) {
     if (!seen.has(r.full_name)) { selected.push(r); seen.add(r.full_name); }
   }
 
   // Most recently pushed
-  const byPush = [...nonFork].sort((a, b) => new Date(b.pushed_at || 0).getTime() - new Date(a.pushed_at || 0).getTime());
+  const byPush = [...pool].sort((a, b) => new Date(b.pushed_at || 0).getTime() - new Date(a.pushed_at || 0).getTime());
   for (const r of byPush.slice(0, 2)) {
     if (!seen.has(r.full_name) && selected.length < 4) { selected.push(r); seen.add(r.full_name); }
   }
 
   // Fill remaining
-  for (const r of nonFork) {
+  for (const r of pool) {
     if (selected.length >= 4) break;
     if (!seen.has(r.full_name)) { selected.push(r); seen.add(r.full_name); }
   }
@@ -78,7 +87,6 @@ async function buildRepoEvidence(repo: any): Promise<RepoEvidence> {
   const fullName = repo.full_name;
   const branch = repo.default_branch || "main";
 
-  // Fetch tree to check presence of dirs
   const treeRes = await ghFetch(`https://api.github.com/repos/${fullName}/git/trees/${branch}?recursive=1`);
   let treePaths = new Set<string>();
   if (treeRes.ok) {
@@ -95,7 +103,6 @@ async function buildRepoEvidence(repo: any): Promise<RepoEvidence> {
     p.startsWith("test/") || p.startsWith("tests/")
   );
 
-  // Fetch artifacts in parallel
   const [readmeRaw, pkgRaw, tsconfigRaw, changelogRaw] = await Promise.all([
     fetchFileContent(fullName, "README.md", branch),
     fetchFileContent(fullName, "package.json", branch),
@@ -127,7 +134,6 @@ async function buildRepoEvidence(repo: any): Promise<RepoEvidence> {
   let changelog_excerpt: string | null = null;
   if (changelogRaw) {
     const lines = changelogRaw.split("\n");
-    // Get first 2 version entries (headers starting with ## or #)
     const headers: number[] = [];
     lines.forEach((l, i) => { if (/^#{1,2}\s/.test(l)) headers.push(i); });
     const endIdx = headers.length >= 3 ? headers[2] : lines.length;
@@ -150,15 +156,15 @@ async function buildRepoEvidence(repo: any): Promise<RepoEvidence> {
   };
 }
 
-// 12-criterion rubric LLM call
+// Must-have criteria with weights (frontend-focused only)
 const MUST_HAVE_CRITERIA = [
-  "react_typescript",
-  "rich_app_architecture",
-  "docs_versioning",
-  "performance_profiling",
-  "technical_leadership",
-  "english_communication",
+  { key: "react_typescript", weight: 2.0 },
+  { key: "rich_app_architecture", weight: 2.0 },
+  { key: "performance_profiling", weight: 1.5 },
+  { key: "docs_versioning", weight: 1.0 },
 ] as const;
+
+const MUST_HAVE_TOTAL_WEIGHT = MUST_HAVE_CRITERIA.reduce((s, c) => s + c.weight, 0); // 6.5
 
 const NICE_TO_HAVE_CRITERIA = [
   "bpmn_uml_uis",
@@ -169,7 +175,7 @@ const NICE_TO_HAVE_CRITERIA = [
   "canvas_webgl",
 ] as const;
 
-function buildCriterionSchema(name: string, description: string) {
+function buildCriterionSchema(_name: string, _description: string) {
   return {
     type: "object",
     properties: {
@@ -194,34 +200,34 @@ TS Strict: ${r.tsconfig_strict ?? "unknown"}`;
     return block;
   }).join("\n\n---\n\n");
 
-  const systemPrompt = `You are a senior technical recruiter evaluating a GitHub developer for a frontend engineering role.
+  const systemPrompt = `You are a senior technical recruiter evaluating a GitHub developer for a **Frontend / UI Engineering** role. The role requires hands-on React + TypeScript expertise building complex browser-based applications.
 
 You will receive evidence from their top repositories. Score each criterion on a 5-point scale: 0 (no evidence), 0.25 (weak), 0.50 (moderate), 0.75 (strong), 1.00 (exceptional).
 
-**MUST-HAVE criteria (these matter most):**
-1. react_typescript — Evidence of React + TypeScript usage in real apps (not tutorials/templates)
-2. rich_app_architecture — Complex UI patterns: state management, routing, component composition, data fetching
-3. docs_versioning — READMEs, CHANGELOGs, semantic versioning, release management
-4. performance_profiling — Evidence of perf optimization: code splitting, memoization, lazy loading, bundle analysis
-5. technical_leadership — Maintained repos with contributors, PR reviews, architectural decisions, mentorship signals
-6. english_communication — Quality of READMEs, docs, commit messages, issue discussions in English
+**MUST-HAVE criteria (these are critical — frontend engineering skills only):**
+1. react_typescript — Evidence of React + TypeScript usage in real, non-trivial applications (not tutorials/templates/boilerplate)
+2. rich_app_architecture — Complex frontend patterns: state management (Redux, Zustand, Jotai), client-side routing, component composition, data fetching/caching, form handling
+3. performance_profiling — Frontend performance optimization: code splitting, React.memo/useMemo, lazy loading, bundle analysis, lighthouse scores, virtualization
+4. docs_versioning — READMEs, CHANGELOGs, semantic versioning, release management
 
 **NICE-TO-HAVE criteria:**
-7. bpmn_uml_uis — Evidence of building process/workflow editors, diagram tools, or complex visual UIs
-8. wcag_accessibility — WCAG 2.2 compliance signals: aria labels, a11y testing, screen reader support
-9. semver_library_maintenance — Maintaining npm packages with proper semver, release cycles, deprecation handling
-10. crdts — CRDTs, operational transforms, real-time collaboration, conflict resolution
-11. wasm — WebAssembly usage, Rust/C++ to WASM compilation, performance-critical modules
-12. canvas_webgl — Canvas 2D, WebGL, Three.js, PixiJS, data viz, custom rendering
+5. bpmn_uml_uis — Evidence of building process/workflow editors, diagram tools, or complex visual UIs
+6. wcag_accessibility — WCAG 2.2 compliance signals: aria labels, a11y testing, screen reader support
+7. semver_library_maintenance — Maintaining npm packages with proper semver, release cycles, deprecation handling
+8. crdts — CRDTs, operational transforms, real-time collaboration, conflict resolution
+9. wasm — WebAssembly usage, Rust/C++ to WASM compilation, performance-critical modules
+10. canvas_webgl — Canvas 2D, WebGL, Three.js, PixiJS, data viz, custom rendering
+
+**CRITICAL RULES:**
+- This is a FRONTEND role. Candidates whose repos are primarily backend (Python, Java, C#, Go services), DevOps, mobile-native, or data science should score LOW on must-haves even if their code quality is high.
+- If you see no React, no TypeScript, and no browser-based UI work, react_typescript MUST be 0.
+- Downweight template/boilerplate repos (create-react-app defaults, tutorial code).
+- Stars/forks are context only, not direct score contributors.
+- Forks without substantial modifications score 0.
+- Look for ORIGINAL work and real complexity in the browser/UI space.
 
 **Assessment requirement:**
-- Provide an assessment: 2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed.
-
-**Anti-gaming rules:**
-- Downweight template/boilerplate repos (create-react-app defaults, tutorial code)
-- Stars/forks are context only, not direct score contributors
-- Forks without substantial modifications score 0
-- Look for ORIGINAL work and real complexity`;
+- Provide an assessment: 2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed.`;
 
   const userPrompt = `Developer: ${login}
 Profile: ${profile.name || "unknown"} | ${profile.bio || "no bio"} | ${profile.followers || 0} followers | ${profile.public_repos || 0} repos
@@ -230,6 +236,21 @@ Location: ${profile.location || "unknown"} | Company: ${profile.company || "unkn
 Evidence from ${repoEvidences.length} repositories:
 
 ${evidenceBlock}`;
+
+  const toolProperties: Record<string, any> = {};
+  const toolRequired: string[] = [];
+
+  for (const c of MUST_HAVE_CRITERIA) {
+    toolProperties[c.key] = buildCriterionSchema(c.key, "");
+    toolRequired.push(c.key);
+  }
+  for (const c of NICE_TO_HAVE_CRITERIA) {
+    toolProperties[c] = buildCriterionSchema(c, "");
+    toolRequired.push(c);
+  }
+  toolProperties.summary = { type: "string", description: "1-2 sentence overall assessment" };
+  toolProperties.assessment = { type: "string", description: "2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed." };
+  toolRequired.push("summary", "assessment");
 
   const response = await fetch(AI_GATEWAY_URL, {
     method: "POST",
@@ -247,31 +268,11 @@ ${evidenceBlock}`;
         type: "function",
         function: {
           name: "submit_candidate_scores",
-          description: "Submit the 12-criterion evaluation scores with evidence.",
+          description: "Submit the evaluation scores with evidence.",
           parameters: {
             type: "object",
-            properties: {
-              react_typescript: buildCriterionSchema("react_typescript", ""),
-              rich_app_architecture: buildCriterionSchema("rich_app_architecture", ""),
-              docs_versioning: buildCriterionSchema("docs_versioning", ""),
-              performance_profiling: buildCriterionSchema("performance_profiling", ""),
-              technical_leadership: buildCriterionSchema("technical_leadership", ""),
-              english_communication: buildCriterionSchema("english_communication", ""),
-              bpmn_uml_uis: buildCriterionSchema("bpmn_uml_uis", ""),
-              wcag_accessibility: buildCriterionSchema("wcag_accessibility", ""),
-              semver_library_maintenance: buildCriterionSchema("semver_library_maintenance", ""),
-              crdts: buildCriterionSchema("crdts", ""),
-              wasm: buildCriterionSchema("wasm", ""),
-              canvas_webgl: buildCriterionSchema("canvas_webgl", ""),
-              summary: { type: "string", description: "1-2 sentence overall assessment" },
-              assessment: { type: "string", description: "2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed." },
-            },
-            required: [
-              "react_typescript", "rich_app_architecture", "docs_versioning",
-              "performance_profiling", "technical_leadership", "english_communication",
-              "bpmn_uml_uis", "wcag_accessibility", "semver_library_maintenance",
-              "crdts", "wasm", "canvas_webgl", "summary", "assessment",
-            ],
+            properties: toolProperties,
+            required: toolRequired,
             additionalProperties: false,
           },
         },
@@ -327,10 +328,10 @@ serve(async (req) => {
     }
     const allRepos = reposRes.ok ? await reposRes.json() : [];
 
-    // 3. Select top 4 repos
+    // 3. Select top 4 repos (frontend-preferred)
     const topRepos = selectTopRepos(Array.isArray(allRepos) ? allRepos : []);
 
-    // 4. Build evidence for each repo (sequential to respect rate limits)
+    // 4. Build evidence for each repo
     const repoEvidences: RepoEvidence[] = [];
     for (const repo of topRepos) {
       try {
@@ -342,7 +343,6 @@ serve(async (req) => {
     }
 
     if (repoEvidences.length === 0) {
-      // No evidence — mark as NO
       const { data: person } = await supabase.from("people").select("id").eq("login", login).maybeSingle();
       if (person) {
         await supabase.from("people").update({
@@ -362,6 +362,7 @@ serve(async (req) => {
         scores = await llmScoreCandidate(login, repoEvidences, profile);
         break;
       } catch (e) {
+        if (e.message === "LLM_PAYMENT_REQUIRED") throw e;
         if (retries < 2 && (e.message.includes("RATE_LIMITED") || e.message.includes("429"))) {
           retries++;
           await new Promise(r => setTimeout(r, 3000 * retries));
@@ -371,10 +372,42 @@ serve(async (req) => {
       }
     }
 
-    // 6. Compute overall_pct
-    const mustScores = MUST_HAVE_CRITERIA.map(c => scores[c]?.score ?? 0);
+    // 6. Compute weighted must-have score
+    const reactScore = scores.react_typescript?.score ?? 0;
+
+    // Hard gate: no React/TS evidence → automatic NO
+    if (reactScore < 0.25) {
+      const { data: person } = await supabase.from("people").select("id").eq("login", login).maybeSingle();
+      const profileData = {
+        name: profile.name, avatar_url: profile.avatar_url, html_url: profile.html_url,
+        bio: profile.bio, blog: profile.blog, email: profile.email,
+        twitter_username: profile.twitter_username, public_repos: profile.public_repos,
+        followers: profile.followers, company: profile.company, location: profile.location,
+        is_real_person: true,
+      };
+      if (person) {
+        await supabase.from("people").update({
+          profile: profileData, shortlist_status: "NO", overall_score: 0,
+          updated_at: new Date().toISOString(),
+        }).eq("id", person.id);
+      } else {
+        await supabase.from("people").insert({
+          login, profile: profileData, overall_score: 0, shortlist_status: "NO",
+        });
+      }
+      return new Response(JSON.stringify({ login, shortlist_status: "NO", reason: "no_react_ts", react_score: reactScore }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Weighted must-have average
+    let weightedMustSum = 0;
+    for (const c of MUST_HAVE_CRITERIA) {
+      weightedMustSum += (scores[c.key]?.score ?? 0) * c.weight;
+    }
+    const mustAvg = weightedMustSum / MUST_HAVE_TOTAL_WEIGHT;
+
     const niceScores = NICE_TO_HAVE_CRITERIA.map(c => scores[c]?.score ?? 0);
-    const mustAvg = mustScores.reduce((a, b) => a + b, 0) / mustScores.length;
     const niceAvg = niceScores.reduce((a, b) => a + b, 0) / niceScores.length;
     const overallPct = Math.round(100 * (0.80 * mustAvg + 0.20 * niceAvg));
 
@@ -416,7 +449,7 @@ serve(async (req) => {
 
     // 9. Insert person_evidence with full rubric
     const evidencePayload = {
-      must_haves: Object.fromEntries(MUST_HAVE_CRITERIA.map(c => [c, scores[c]])),
+      must_haves: Object.fromEntries(MUST_HAVE_CRITERIA.map(c => [c.key, scores[c.key]])),
       nice_to_haves: Object.fromEntries(NICE_TO_HAVE_CRITERIA.map(c => [c, scores[c]])),
       must_avg: Math.round(mustAvg * 100) / 100,
       nice_avg: Math.round(niceAvg * 100) / 100,
