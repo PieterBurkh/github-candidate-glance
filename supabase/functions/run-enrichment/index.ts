@@ -97,6 +97,45 @@ serve(async (req) => {
       }
     }
 
+    // Backfill: re-check people missing is_real_person flag
+    const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN") || "";
+    const { data: unflagged } = await supabase
+      .from("people")
+      .select("id, login, profile")
+      .is("profile->is_real_person", null);
+
+    const BOT_LOGINS = new Set([
+      "dependabot", "renovate-bot", "github-actions", "greenkeeper",
+      "snyk-bot", "codecov-commenter", "semantic-release-bot",
+      "allcontributors", "imgbot", "stale",
+    ]);
+
+    for (const person of unflagged || []) {
+      try {
+        const resp = await fetch(`https://api.github.com/users/${person.login}`, {
+          headers: GITHUB_TOKEN
+            ? { Authorization: `Bearer ${GITHUB_TOKEN}`, "User-Agent": "signal-pipeline" }
+            : { "User-Agent": "signal-pipeline" },
+        });
+        if (!resp.ok) continue;
+        const gh = await resp.json();
+        const isBot = person.login.endsWith("[bot]") || BOT_LOGINS.has(person.login.toLowerCase()) || gh.type === "Bot";
+        const isOrg = gh.type === "Organization";
+        const isReal = !isBot && !isOrg;
+        const updatedProfile = {
+          ...(typeof person.profile === "object" && person.profile !== null ? person.profile : {}),
+          is_real_person: isReal,
+          is_sparse_profile: isReal && !gh.name && !gh.bio && !gh.blog && (gh.followers || 0) === 0,
+        };
+        await supabase
+          .from("people")
+          .update({ profile: updatedProfile, updated_at: new Date().toISOString() })
+          .eq("id", person.id);
+      } catch (e) {
+        console.error(`Backfill failed for ${person.login}:`, e);
+      }
+    }
+
     // Mark run complete
     await supabase
       .from("runs")
