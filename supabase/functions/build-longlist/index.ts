@@ -12,8 +12,7 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const DEADLINE_MS = 140_000;
-const BATCH_SIZE = 5; // concurrent candidates
-const DB_FLUSH_SIZE = 50; // flush DB every N candidates
+const BATCH_SIZE = 20; // concurrent candidates
 
 serve(async (req) => {
   const startTime = Date.now();
@@ -313,10 +312,7 @@ serve(async (req) => {
         if (r.processed) totalProcessed++;
       }
 
-      // Flush if buffer is large enough
-      if (pendingUpdates.length >= DB_FLUSH_SIZE) {
-        await flushUpdates();
-      }
+      await flushUpdates();
     }
 
     // Final flush
