@@ -10,8 +10,9 @@ import {
   Zap,
   ArrowRight,
   List,
+  Pause,
 } from "lucide-react";
-import { useRuns, useStartRun, useRunEnrichment } from "@/hooks/useSignalPipeline";
+import { useRuns, useStartRun, useRunEnrichment, useResumeRun } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,7 @@ const ALL_NETS = [
 const statusConfig: Record<string, { icon: typeof Clock; className: string; label: string }> = {
   pending: { icon: Clock, className: "text-muted-foreground", label: "Pending" },
   running: { icon: Loader2, className: "text-primary animate-spin", label: "Running" },
+  paused: { icon: Pause, className: "text-amber-600", label: "Paused" },
   completed: { icon: CheckCircle2, className: "text-green-600", label: "Completed" },
   failed: { icon: XCircle, className: "text-destructive", label: "Failed" },
 };
@@ -43,6 +45,7 @@ export default function RunsPage() {
   const { data: runs, isLoading } = useRuns();
   const startRun = useStartRun();
   const runEnrichment = useRunEnrichment();
+  const resumeRun = useResumeRun();
   const [showForm, setShowForm] = useState(false);
   const [perPage, setPerPage] = useState(100);
   const [maxPages, setMaxPages] = useState(10);
@@ -177,9 +180,9 @@ export default function RunsPage() {
                           <Badge variant="outline" className="text-[10px]">
                             {config.label}
                           </Badge>
-                          {(run.search_params as any)?.timed_out && (
+                          {run.status === "paused" && (
                             <Badge variant="secondary" className="text-[10px] text-amber-600">
-                              Partial (timed out)
+                              Partial — resume to continue
                             </Badge>
                           )}
                           <span className="text-xs text-muted-foreground">
@@ -200,6 +203,22 @@ export default function RunsPage() {
                           Longlist
                         </Button>
                       </Link>
+                      {run.status === "paused" && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => resumeRun.mutate(run.id)}
+                          disabled={resumeRun.isPending}
+                        >
+                          {resumeRun.isPending ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5" />
+                          )}
+                          Resume
+                        </Button>
+                      )}
                       {(run.status === "pending" || run.status === "completed") && (
                         <Button
                           variant="outline"
