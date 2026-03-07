@@ -9,6 +9,7 @@ import {
   Plus,
   Zap,
   ArrowRight,
+  List,
 } from "lucide-react";
 import { useRuns, useStartRun, useRunEnrichment } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { NavBar } from "@/components/NavBar";
+
+const ALL_NETS = [
+  { id: "core-stack", label: "Core Stack" },
+  { id: "meta-frameworks", label: "Meta-frameworks" },
+  { id: "component-libs", label: "Component Libs" },
+  { id: "versioning", label: "Versioning" },
+  { id: "performance", label: "Performance" },
+  { id: "a11y", label: "Accessibility" },
+  { id: "complex-ui", label: "Complex UI" },
+  { id: "crdt-realtime", label: "CRDT / Realtime" },
+  { id: "wasm", label: "WASM" },
+];
 
 const statusConfig: Record<string, { icon: typeof Clock; className: string; label: string }> = {
   pending: { icon: Clock, className: "text-muted-foreground", label: "Pending" },
@@ -30,13 +44,18 @@ export default function RunsPage() {
   const startRun = useStartRun();
   const runEnrichment = useRunEnrichment();
   const [showForm, setShowForm] = useState(false);
-  const [minStars, setMinStars] = useState(10);
   const [perPage, setPerPage] = useState(30);
+  const [selectedNets, setSelectedNets] = useState<string[]>(ALL_NETS.map((n) => n.id));
+
+  const toggleNet = (netId: string) => {
+    setSelectedNets((prev) =>
+      prev.includes(netId) ? prev.filter((n) => n !== netId) : [...prev, netId]
+    );
+  };
 
   const handleNewRun = async () => {
-    const result = await startRun.mutateAsync({ minStars, perPage });
+    const result = await startRun.mutateAsync({ nets: selectedNets, perPage });
     setShowForm(false);
-    // Auto-start enrichment
     runEnrichment.mutate(result.runId);
   };
 
@@ -48,7 +67,7 @@ export default function RunsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Search Runs</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Discover repos, extract signals, identify leads
+              Discover repos via job-mapped nets, extract signals, identify leads
             </p>
           </div>
           <Button onClick={() => setShowForm(!showForm)} className="gap-1.5">
@@ -63,31 +82,41 @@ export default function RunsPage() {
               <CardTitle className="text-lg">Configure Search</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Min Stars</Label>
-                  <Input
-                    type="number"
-                    value={minStars}
-                    onChange={(e) => setMinStars(Number(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Results Per Query</Label>
-                  <Input
-                    type="number"
-                    value={perPage}
-                    onChange={(e) => setPerPage(Number(e.target.value))}
-                  />
+              <div className="space-y-2">
+                <Label>Results Per Query</Label>
+                <Input
+                  type="number"
+                  value={perPage}
+                  onChange={(e) => setPerPage(Number(e.target.value))}
+                  className="w-32"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Search Nets</Label>
+                <p className="text-xs text-muted-foreground">
+                  Each net targets a specific signal — README keywords, topics, frameworks
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                  {ALL_NETS.map((net) => (
+                    <label
+                      key={net.id}
+                      className="flex items-center gap-2 rounded-md border border-input px-3 py-2 text-sm cursor-pointer hover:bg-accent transition-colors"
+                    >
+                      <Checkbox
+                        checked={selectedNets.includes(net.id)}
+                        onCheckedChange={() => toggleNet(net.id)}
+                      />
+                      {net.label}
+                    </label>
+                  ))}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Searches: React+TS, Next.js+TS, Tailwind+React+TS repos on GitHub
-              </p>
+
               <div className="flex gap-2">
                 <Button
                   onClick={handleNewRun}
-                  disabled={startRun.isPending || runEnrichment.isPending}
+                  disabled={startRun.isPending || runEnrichment.isPending || selectedNets.length === 0}
                   className="gap-1.5"
                 >
                   {startRun.isPending ? (
@@ -118,6 +147,7 @@ export default function RunsPage() {
             {runs.map((run) => {
               const config = statusConfig[run.status] || statusConfig.pending;
               const StatusIcon = config.icon;
+              const nets = (run.search_params as any)?.nets as string[] | undefined;
               return (
                 <Card key={run.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center justify-between">
@@ -132,22 +162,28 @@ export default function RunsPage() {
                             minute: "2-digit",
                           })}
                         </p>
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <Badge variant="outline" className="text-[10px]">
                             {config.label}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {run.repo_count} repos
                           </span>
-                          {run.search_params?.minStars && (
+                          {nets && (
                             <span className="text-xs text-muted-foreground">
-                              ≥{run.search_params.minStars}★
+                              {nets.length} nets
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Link to={`/runs/${run.id}/longlist`}>
+                        <Button variant="ghost" size="sm" className="gap-1.5">
+                          <List className="h-3.5 w-3.5" />
+                          Longlist
+                        </Button>
+                      </Link>
                       {run.status === "pending" && (
                         <Button
                           variant="outline"
