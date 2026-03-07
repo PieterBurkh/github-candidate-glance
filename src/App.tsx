@@ -9,6 +9,8 @@ import LeadDetailPage from "./pages/LeadDetailPage";
 import JobDescription from "./pages/JobDescription";
 import LonglistPage from "./pages/LonglistPage";
 import GlobalLonglistPage from "./pages/GlobalLonglistPage";
+import LonglistRunsPage from "./pages/LonglistRunsPage";
+import LonglistResultsPage from "./pages/LonglistResultsPage";
 import ApproachPage from "./pages/ApproachPage";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +25,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<RunsPage />} />
           <Route path="/longlist" element={<GlobalLonglistPage />} />
+          <Route path="/longlist-runs" element={<LonglistRunsPage />} />
+          <Route path="/longlist-results" element={<LonglistResultsPage />} />
           <Route path="/shortlist" element={<LeadsPage />} />
           <Route path="/approach" element={<ApproachPage />} />
           <Route path="/runs/:runId/longlist" element={<LonglistPage />} />

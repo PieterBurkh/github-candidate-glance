@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      longlist_candidates: {
+        Row: {
+          candidate_repos: Json
+          created_at: string
+          discard_reason: string | null
+          hydration: Json
+          id: string
+          login: string
+          longlist_run_id: string
+          pre_confidence: number
+          pre_score: number
+          repo_signals: Json
+          selection_tier: string | null
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          candidate_repos?: Json
+          created_at?: string
+          discard_reason?: string | null
+          hydration?: Json
+          id?: string
+          login: string
+          longlist_run_id: string
+          pre_confidence?: number
+          pre_score?: number
+          repo_signals?: Json
+          selection_tier?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Update: {
+          candidate_repos?: Json
+          created_at?: string
+          discard_reason?: string | null
+          hydration?: Json
+          id?: string
+          login?: string
+          longlist_run_id?: string
+          pre_confidence?: number
+          pre_score?: number
+          repo_signals?: Json
+          selection_tier?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "longlist_candidates_longlist_run_id_fkey"
+            columns: ["longlist_run_id"]
+            isOneToOne: false
+            referencedRelation: "longlist_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      longlist_runs: {
+        Row: {
+          created_at: string
+          id: string
+          progress: Json
+          source_run_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          progress?: Json
+          source_run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          progress?: Json
+          source_run_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "longlist_runs_source_run_id_fkey"
+            columns: ["source_run_id"]
+            isOneToOne: false
+            referencedRelation: "runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people: {
         Row: {
           created_at: string
