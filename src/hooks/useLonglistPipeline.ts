@@ -60,7 +60,7 @@ export function useStartLonglistRun() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (sourceRunId?: string) => {
-      // Create the run record
+      // Create the run record — always processes all repos from Initial list
       const { data: run, error: insertErr } = await supabase
         .from("longlist_runs")
         .insert({ source_run_id: sourceRunId || null })
