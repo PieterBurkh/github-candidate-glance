@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.build-longlist]
 verify_jwt = false
+
+[functions.enrich-candidate]
+verify_jwt = false
+
+[functions.run-shortlist]
+verify_jwt = false
