@@ -261,12 +261,15 @@ ${evidenceBlock}`;
               wasm: buildCriterionSchema("wasm", ""),
               canvas_webgl: buildCriterionSchema("canvas_webgl", ""),
               summary: { type: "string", description: "1-2 sentence overall assessment" },
+              must_haves_commentary: { type: "string", description: "1-2 sentence summary explaining the must-have scores and reasoning" },
+              nice_to_haves_commentary: { type: "string", description: "1-2 sentence summary explaining the nice-to-have scores and reasoning" },
             },
             required: [
               "react_typescript", "rich_app_architecture", "docs_versioning",
               "performance_profiling", "technical_leadership", "english_communication",
               "bpmn_uml_uis", "wcag_accessibility", "semver_library_maintenance",
               "crdts", "wasm", "canvas_webgl", "summary",
+              "must_haves_commentary", "nice_to_haves_commentary",
             ],
             additionalProperties: false,
           },
@@ -418,6 +421,8 @@ serve(async (req) => {
       nice_avg: Math.round(niceAvg * 100) / 100,
       overall_pct: overallPct,
       summary: scores.summary || "",
+      must_haves_commentary: scores.must_haves_commentary || "",
+      nice_to_haves_commentary: scores.nice_to_haves_commentary || "",
       repos_evaluated: repoEvidences.map(r => r.full_name),
     };
 
