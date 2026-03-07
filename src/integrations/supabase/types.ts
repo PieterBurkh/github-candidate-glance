@@ -112,6 +112,7 @@ export type Database = {
           login: string
           overall_score: number
           profile: Json
+          shortlist_status: string | null
           updated_at: string
         }
         Insert: {
@@ -120,6 +121,7 @@ export type Database = {
           login: string
           overall_score?: number
           profile?: Json
+          shortlist_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -128,6 +130,7 @@ export type Database = {
           login?: string
           overall_score?: number
           profile?: Json
+          shortlist_status?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -272,6 +275,30 @@ export type Database = {
           created_at?: string
           id?: string
           search_params?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shortlist_runs: {
+        Row: {
+          created_at: string
+          id: string
+          progress: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          progress?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          progress?: Json
           status?: string
           updated_at?: string
         }
