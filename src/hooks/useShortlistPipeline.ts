@@ -53,6 +53,20 @@ export function useStartShortlistRun() {
   });
 }
 
+export function usePauseShortlistRun() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (shortlistRunId: string) => {
+      const { error } = await supabase
+        .from("shortlist_runs")
+        .update({ status: "paused", updated_at: new Date().toISOString() })
+        .eq("id", shortlistRunId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shortlist-runs"] }),
+  });
+}
+
 export function useResumeShortlistRun() {
   const qc = useQueryClient();
   return useMutation({
