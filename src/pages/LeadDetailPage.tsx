@@ -185,6 +185,23 @@ export default function LeadDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Assessment */}
+        {(() => {
+          const rubric = evidence?.find(ev => ev.criterion === "shortlist_rubric");
+          const assessment = rubric ? (rubric.evidence as any)?.assessment : null;
+          if (!assessment) return null;
+          return (
+            <Card className="mb-6">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Assessment</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground leading-relaxed">{assessment}</p>
+              </CardContent>
+            </Card>
+          );
+        })()}
+
         {/* Evidence */}
         <h2 className="text-lg font-semibold text-foreground mb-3">Signal Evidence</h2>
         {evidence && evidence.length > 0 ? (
