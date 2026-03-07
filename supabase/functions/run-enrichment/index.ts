@@ -25,11 +25,17 @@ serve(async (req) => {
     await supabase.from("runs").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", runId);
 
     // Fetch all repos for this run
-    const { data: repos, error: reposErr } = await supabase
+    const { data: allRepos, error: reposErr } = await supabase
       .from("repos")
-      .select("id, full_name")
+      .select("id, full_name, metadata")
       .eq("run_id", runId);
     if (reposErr) throw new Error(`Failed to fetch repos: ${reposErr.message}`);
+
+    // Filter out org-owned repos to save API calls
+    const repos = (allRepos || []).filter((r: any) => {
+      const ownerType = r.metadata?.owner_type;
+      return !ownerType || ownerType === "User";
+    });
 
     const enrichUrl = `${SUPABASE_URL}/functions/v1/enrich-repo`;
     const batchSize = 3;

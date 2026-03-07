@@ -50,9 +50,9 @@ export default function LeadsPage() {
               </Card>
             ))}
           </div>
-        ) : leads && leads.length > 0 ? (
+        ) : leads && leads.filter((p: any) => p.profile?.is_real_person !== false).length > 0 ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {leads.map((person) => (
+            {leads.filter((p: any) => p.profile?.is_real_person !== false).map((person) => (
               <Link key={person.id} to={`/leads/${person.login}`}>
                 <Card className="group hover:shadow-lg transition-shadow cursor-pointer h-full">
                   <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
