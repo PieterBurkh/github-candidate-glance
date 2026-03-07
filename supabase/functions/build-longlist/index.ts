@@ -13,6 +13,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const DEADLINE_MS = 140_000;
 const BATCH_SIZE = 50;
 const CONCURRENCY = 10;
+const PAGE_SIZE = 500;
+const INLINE_EXPLOIT_THRESHOLD = 80;
 
 function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -254,7 +256,7 @@ async function processLonglist(longlistRunId: string) {
         updates.push(r.value);
       }
 
-      // Batch write all updates
+      // Batch write all updates — inline exploit for high scorers
       const now = new Date().toISOString();
       await Promise.all(updates.map(u => {
         const payload: any = { stage: u.stage, updated_at: now };
@@ -264,6 +266,9 @@ async function processLonglist(longlistRunId: string) {
         if (u.repo_signals) payload.repo_signals = u.repo_signals;
         if (u.pre_score !== undefined) payload.pre_score = u.pre_score;
         if (u.pre_confidence !== undefined) payload.pre_confidence = u.pre_confidence;
+        if (u.stage === "scored" && (u.pre_score || 0) >= INLINE_EXPLOIT_THRESHOLD) {
+          payload.selection_tier = "exploit";
+        }
         return sb.from("longlist_candidates").update(payload).eq("id", u.id);
       }));
 
