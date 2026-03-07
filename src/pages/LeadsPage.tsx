@@ -1,127 +1,208 @@
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Star, Users } from "lucide-react";
-import { useLeads } from "@/hooks/useSignalPipeline";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ExternalLink, Users, Star } from "lucide-react";
+import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
+import { useShortlistEnrichment } from "@/hooks/useShortlistData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { NavBar } from "@/components/NavBar";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip, TooltipContent, TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function LeadsPage() {
-  const { runId } = useParams<{ runId: string }>();
-  const { data: leads, isLoading } = useLeads(runId);
+  const [tierFilter, setTierFilter] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"score" | "enriched">("score");
+  const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
+  const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
+
+  const sorted = [...(candidates || [])].sort((a, b) => {
+    if (sortBy === "enriched") {
+      const eA = enrichmentMap[a.login]?.overall_score ?? -1;
+      const eB = enrichmentMap[b.login]?.overall_score ?? -1;
+      if (eA !== eB) return eB - eA;
+    }
+    return b.pre_score - a.pre_score;
+  });
 
   return (
     <div className="min-h-screen bg-background">
       <NavBar />
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" />
-              Runs
-            </Button>
-          </Link>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Leads</h1>
-            <p className="text-sm text-muted-foreground">
-              {leads?.length || 0} candidates ranked by signal strength
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Shortlist</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {sorted.length} candidates from longlist · enriched with LLM code review
             </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={tierFilter || "all"} onValueChange={(v) => setTierFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="All tiers" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tiers</SelectItem>
+                <SelectItem value="exploit">Exploit</SelectItem>
+                <SelectItem value="explore">Explore</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="score">Sort by Pre-score</SelectItem>
+                <SelectItem value="enriched">Sort by Enriched</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Card key={i}>
-                <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
-                  <Skeleton className="h-12 w-12 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-5 w-24 rounded-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : leads && leads.filter((p: any) => p.profile?.is_real_person === true).length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {leads.filter((p: any) => p.profile?.is_real_person === true).map((person) => (
-              <Link key={person.id} to={`/leads/${person.login}`}>
-                <Card className="group hover:shadow-lg transition-shadow cursor-pointer h-full">
-                  <CardHeader className="flex flex-row items-start gap-4 space-y-0 pb-3">
-                    <Avatar className="h-12 w-12 ring-2 ring-border">
-                      <AvatarImage
-                        src={person.profile.avatar_url}
-                        alt={person.login}
-                      />
-                      <AvatarFallback className="text-sm font-bold">
-                        {person.login.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                        {person.profile.name || person.login}
-                      </p>
-                      <p className="text-xs text-muted-foreground">@{person.login}</p>
-                      {person.profile.bio && (
-                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
-                          {person.profile.bio}
-                        </p>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Overall Score</span>
-                        <span className="font-semibold text-foreground">
-                          {(person.overall_score * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                      <Progress value={person.overall_score * 100} className="h-2" />
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {person.overall_score >= 0.8 && (
-                        <Badge className="text-[10px]">A-tier</Badge>
-                      )}
-                      {person.overall_score >= 0.6 && person.overall_score < 0.8 && (
-                        <Badge variant="secondary" className="text-[10px]">B-tier</Badge>
-                      )}
-                      {person.overall_score >= 0.4 && person.overall_score < 0.6 && (
-                        <Badge variant="outline" className="text-[10px]">C-tier</Badge>
-                      )}
-                      {person.profile.followers && person.profile.followers > 100 && (
-                        <Badge variant="outline" className="text-[10px] gap-1">
-                          <Users className="h-2.5 w-2.5" />
-                          {person.profile.followers.toLocaleString()}
+          <div className="text-center py-16 text-muted-foreground text-sm">Loading…</div>
+        ) : sorted.length > 0 ? (
+          <div className="border rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8">#</TableHead>
+                  <TableHead>Candidate</TableHead>
+                  <TableHead className="w-20 text-right">Pre-score</TableHead>
+                  <TableHead className="w-24">Tier</TableHead>
+                  <TableHead className="w-20 text-right">Followers</TableHead>
+                  <TableHead className="w-20 text-right">Repos</TableHead>
+                  <TableHead className="w-24 text-right">Enriched</TableHead>
+                  <TableHead className="min-w-[250px]">LLM Commentary</TableHead>
+                  <TableHead className="w-16" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sorted.map((c, idx) => {
+                  const h = c.hydration as any;
+                  const enrichment = enrichmentMap[c.login];
+                  const evidence = enrichment?.evidence;
+                  const codeQualityEv = evidence?.find((e: any) => e.criterion === "code_quality");
+                  const categories = codeQualityEv?.evidence?.categories as Record<string, any> | undefined;
+                  const summary = codeQualityEv?.evidence?.summary as string | undefined;
+
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {h?.avatar_url && (
+                            <img src={h.avatar_url} className="h-7 w-7 rounded-full" alt="" />
+                          )}
+                          <div>
+                            <Link
+                              to={`/leads/${c.login}`}
+                              className="font-medium text-foreground hover:text-primary transition-colors"
+                            >
+                              {h?.name || c.login}
+                            </Link>
+                            {h?.name && (
+                              <span className="text-xs text-muted-foreground ml-1.5">@{c.login}</span>
+                            )}
+                            {h?.bio && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 max-w-[200px]">
+                                {h.bio}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={c.selection_tier === "exploit" ? "default" : "secondary"}
+                          className="text-[10px]"
+                        >
+                          {c.selection_tier}
                         </Badge>
-                      )}
-                      {person.profile.public_repos && (
-                        <Badge variant="outline" className="text-[10px]">
-                          {person.profile.public_repos} repos
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 pt-1 border-t border-border text-[10px] text-muted-foreground">
-                      {person.profile.location && <span>{person.profile.location}</span>}
-                      {person.profile.company && <span>· {person.profile.company}</span>}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {h?.followers != null ? (
+                          <span className="flex items-center justify-end gap-1 text-muted-foreground">
+                            <Users className="h-3 w-3" />
+                            {h.followers.toLocaleString()}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">–</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-sm">
+                        {h?.public_repos != null ? (
+                          <span className="text-muted-foreground">{h.public_repos}</span>
+                        ) : (
+                          <span className="text-muted-foreground">–</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {enrichment ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="font-mono text-sm font-semibold text-foreground">
+                              {(enrichment.overall_score * 100).toFixed(0)}%
+                            </span>
+                            <Progress value={enrichment.overall_score * 100} className="h-1.5 w-12" />
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Pending</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {categories ? (
+                          <div className="flex flex-wrap gap-1">
+                            {Object.entries(categories).map(([key, cat]: [string, any]) => (
+                              <Tooltip key={key}>
+                                <TooltipTrigger asChild>
+                                  <Badge
+                                    variant={cat.score >= 0.7 ? "default" : cat.score >= 0.4 ? "secondary" : "outline"}
+                                    className="text-[9px] cursor-help"
+                                  >
+                                    {key.replace(/_/g, " ")}: {(cat.score * 100).toFixed(0)}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="max-w-xs text-xs">
+                                  {cat.evidence?.[0]?.comment || "No comment"}
+                                </TooltipContent>
+                              </Tooltip>
+                            ))}
+                          </div>
+                        ) : summary ? (
+                          <p className="text-xs text-muted-foreground line-clamp-2">{summary}</p>
+                        ) : enrichment ? (
+                          <span className="text-xs text-muted-foreground italic">No category data</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">–</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {h?.html_url && (
+                          <Button variant="ghost" size="icon" asChild className="h-7 w-7">
+                            <a href={h.html_url} target="_blank" rel="noopener noreferrer">
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
         ) : (
           <div className="text-center py-16">
             <p className="text-muted-foreground text-sm">
-              No leads found yet. Run enrichment to discover candidates.
+              No shortlist candidates yet. Run a longlist build first to populate candidates.
             </p>
           </div>
         )}
