@@ -134,8 +134,16 @@ const ALL_NETS: NetDef[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const DEADLINE_MS = 140_000; // 140s, well within 150s edge function limit
-const FLUSH_INTERVAL = 20; // flush to DB every N queries
+const DEADLINE_MS = 140_000;
+const FLUSH_INTERVAL = 20;
+
+interface Cursor {
+  netIdx: number;
+  queryIdx: number;
+  bandIdx: number;
+  sortIdx: number;
+  page: number;
+}
 
 async function flushRepos(
   supabase: ReturnType<typeof createClient>,
@@ -159,11 +167,31 @@ async function flushRepos(
       ignoreDuplicates: false,
     });
     if (error) {
-      // Fallback: insert ignoring duplicates
       const { error: insertErr } = await supabase.from("repos").insert(batch);
       if (insertErr) console.error("Repo insert error:", insertErr.message);
     }
   }
+}
+
+function shouldSkip(
+  cursor: Cursor | null,
+  netIdx: number,
+  queryIdx: number,
+  bandIdx: number,
+  sortIdx: number,
+  page: number
+): boolean {
+  if (!cursor) return false;
+  if (netIdx < cursor.netIdx) return true;
+  if (netIdx > cursor.netIdx) return false;
+  if (queryIdx < cursor.queryIdx) return true;
+  if (queryIdx > cursor.queryIdx) return false;
+  if (bandIdx < cursor.bandIdx) return true;
+  if (bandIdx > cursor.bandIdx) return false;
+  if (sortIdx < cursor.sortIdx) return true;
+  if (sortIdx > cursor.sortIdx) return false;
+  if (page < cursor.page) return true;
+  return false;
 }
 
 serve(async (req) => {
@@ -176,59 +204,132 @@ serve(async (req) => {
   let timedOut = false;
   let totalRepos = 0;
   let succeeded = false;
+  let netsToRun: NetDef[] = [];
+  let perPage = 30;
+  let maxPages = 1;
+  let savedParams: any = {};
 
   try {
-    const {
-      nets: requestedNets,
-      perPage = 30,
-      maxPages = 1,
-    } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const resumeRunId = body.runId as string | undefined;
+    let cursor: Cursor | null = null;
 
-    const netsToRun = requestedNets && requestedNets.length > 0
-      ? ALL_NETS.filter((n) => requestedNets.includes(n.id))
-      : ALL_NETS;
+    if (resumeRunId) {
+      // ── Resume existing run ──
+      const { data: existingRun, error: loadErr } = await supabase
+        .from("runs")
+        .select("*")
+        .eq("id", resumeRunId)
+        .single();
+      if (loadErr || !existingRun) throw new Error(`Run not found: ${resumeRunId}`);
 
-    // Create run
-    const { data: run, error: runErr } = await supabase
-      .from("runs")
-      .insert({
+      runId = existingRun.id;
+      savedParams = existingRun.search_params || {};
+      cursor = savedParams.cursor || null;
+      perPage = savedParams.perPage || 30;
+      maxPages = savedParams.maxPages || 1;
+
+      const netIds = savedParams.nets || [];
+      netsToRun = netIds.length > 0
+        ? ALL_NETS.filter((n) => netIds.includes(n.id))
+        : ALL_NETS;
+
+      // Set status to running
+      await supabase.from("runs").update({
         status: "running",
-        search_params: {
-          nets: netsToRun.map((n) => n.id),
-          perPage,
-          maxPages,
-        },
-      })
-      .select("id")
-      .single();
-    if (runErr) throw new Error(`Failed to create run: ${runErr.message}`);
-    runId = run.id;
+        updated_at: new Date().toISOString(),
+      }).eq("id", runId);
+
+      // Load already-flushed repo keys to avoid duplicates
+      const PAGE_SIZE = 1000;
+      const flushedRepos: { full_name: string }[] = [];
+      let from = 0;
+      while (true) {
+        const { data } = await supabase
+          .from("repos")
+          .select("full_name")
+          .eq("run_id", runId)
+          .range(from, from + PAGE_SIZE - 1);
+        if (!data || data.length === 0) break;
+        flushedRepos.push(...data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+
+      // We'll populate flushedKeys below after creating the sets
+      var preloadedKeys = new Set(flushedRepos.map((r) => r.full_name));
+      totalRepos = savedParams.repos_found || preloadedKeys.size;
+    } else {
+      // ── New run ──
+      const requestedNets = body.nets;
+      perPage = body.perPage || 30;
+      maxPages = body.maxPages || 1;
+
+      netsToRun = requestedNets && requestedNets.length > 0
+        ? ALL_NETS.filter((n) => requestedNets.includes(n.id))
+        : ALL_NETS;
+
+      savedParams = {
+        nets: netsToRun.map((n) => n.id),
+        perPage,
+        maxPages,
+      };
+
+      const { data: run, error: runErr } = await supabase
+        .from("runs")
+        .insert({ status: "running", search_params: savedParams })
+        .select("id")
+        .single();
+      if (runErr) throw new Error(`Failed to create run: ${runErr.message}`);
+      runId = run.id;
+    }
 
     const deadline = Date.now() + DEADLINE_MS;
     const repoMap = new Map<string, any>();
     const flushedKeys = new Set<string>();
-    let queryCount = 0;
 
-    for (const net of netsToRun) {
+    // If resuming, seed flushedKeys with already-saved repos
+    if (typeof preloadedKeys !== "undefined") {
+      for (const key of preloadedKeys) {
+        flushedKeys.add(key);
+      }
+    }
+
+    let queryCount = 0;
+    let lastCursor: Cursor | null = null;
+
+    for (let netIdx = 0; netIdx < netsToRun.length; netIdx++) {
+      const net = netsToRun[netIdx];
       if (Date.now() > deadline) { timedOut = true; break; }
 
-      for (const query of net.queries) {
+      for (let queryIdx = 0; queryIdx < net.queries.length; queryIdx++) {
+        const query = net.queries[queryIdx];
         if (Date.now() > deadline) { timedOut = true; break; }
 
-        for (const band of net.starBands) {
+        for (let bandIdx = 0; bandIdx < net.starBands.length; bandIdx++) {
+          const band = net.starBands[bandIdx];
           if (Date.now() > deadline) { timedOut = true; break; }
 
-          for (const sort of net.sorts) {
+          for (let sortIdx = 0; sortIdx < net.sorts.length; sortIdx++) {
+            const sort = net.sorts[sortIdx];
             if (Date.now() > deadline) { timedOut = true; break; }
 
             for (let page = 1; page <= maxPages; page++) {
               if (Date.now() > deadline) { timedOut = true; break; }
+
+              // Skip iterations before cursor position
+              if (shouldSkip(cursor, netIdx, queryIdx, bandIdx, sortIdx, page)) {
+                continue;
+              }
 
               const q = `${query} stars:${band}`;
               const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${sort}&order=desc&per_page=${perPage}&page=${page}`;
 
               const res = await githubFetch(url);
               queryCount++;
+
+              // Track where we are for cursor saving
+              lastCursor = { netIdx, queryIdx, bandIdx, sortIdx, page: page + 1 };
 
               if (!res.ok) {
                 console.error(`Search failed [${net.id}] "${q}" sort=${sort}: ${res.status}`);
@@ -248,7 +349,7 @@ serve(async (req) => {
                   if (!nets.includes(net.id)) nets.push(net.id);
                 } else {
                   repoMap.set(item.full_name, {
-                    run_id: run.id,
+                    run_id: runId,
                     full_name: item.full_name,
                     owner_login: item.owner?.login || "",
                     metadata: {
@@ -271,16 +372,15 @@ serve(async (req) => {
               // Flush periodically
               if (queryCount % FLUSH_INTERVAL === 0) {
                 await flushRepos(supabase, repoMap, flushedKeys);
-                totalRepos = repoMap.size;
+                totalRepos = flushedKeys.size + (repoMap.size - [...repoMap.keys()].filter(k => flushedKeys.has(k)).length);
+                totalRepos = new Set([...flushedKeys, ...repoMap.keys()]).size;
                 await supabase.from("runs").update({
                   updated_at: new Date().toISOString(),
                   search_params: {
-                    nets: netsToRun.map((n) => n.id),
-                    perPage,
-                    maxPages,
+                    ...savedParams,
                     repos_found: totalRepos,
                   },
-                }).eq("id", run.id);
+                }).eq("id", runId);
               }
 
               await new Promise((r) => setTimeout(r, 200));
@@ -295,11 +395,11 @@ serve(async (req) => {
 
     // Final flush
     await flushRepos(supabase, repoMap, flushedKeys);
-    totalRepos = repoMap.size;
+    totalRepos = new Set([...flushedKeys, ...repoMap.keys()]).size;
     succeeded = true;
 
     return new Response(
-      JSON.stringify({ runId: run.id, repoCount: totalRepos, timedOut }),
+      JSON.stringify({ runId, repoCount: totalRepos, timedOut }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -309,13 +409,30 @@ serve(async (req) => {
     );
   } finally {
     if (runId) {
+      const finalStatus = succeeded
+        ? (timedOut ? "paused" : "completed")
+        : "failed";
+
+      const finalParams: any = {
+        ...savedParams,
+        repos_found: totalRepos,
+      };
+
+      if (timedOut && succeeded) {
+        // Save cursor so we can resume
+        // lastCursor points to the next iteration to process
+        finalParams.cursor = (typeof lastCursor !== "undefined") ? lastCursor : null;
+        finalParams.timed_out = true;
+      } else {
+        // Completed or failed — clear cursor
+        delete finalParams.cursor;
+        finalParams.timed_out = false;
+      }
+
       await supabase.from("runs").update({
-        status: succeeded ? "completed" : "failed",
+        status: finalStatus,
         updated_at: new Date().toISOString(),
-        search_params: {
-          timed_out: timedOut,
-          repos_found: totalRepos,
-        },
+        search_params: finalParams,
       }).eq("id", runId);
     }
   }

@@ -122,6 +122,21 @@ export function useStartRun() {
   });
 }
 
+export function useResumeRun() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (runId: string) => {
+      const { data, error } = await supabase.functions.invoke("search-repos", {
+        body: { runId },
+      });
+      if (error) throw new Error(error.message);
+      if (data.error) throw new Error(data.error);
+      return data as { runId: string; repoCount: number; timedOut: boolean };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["runs"] }),
+  });
+}
+
 export function useRunEnrichment() {
   const qc = useQueryClient();
   return useMutation({
