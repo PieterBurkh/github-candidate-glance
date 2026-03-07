@@ -3,11 +3,9 @@ import {
   Play, Loader2, CheckCircle2, Clock, Plus, Pause, XCircle,
 } from "lucide-react";
 import { useLonglistRuns, useStartLonglistRun, useResumeLonglistRun } from "@/hooks/useLonglistPipeline";
-import { useRuns } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NavBar } from "@/components/NavBar";
 
 const statusConfig: Record<string, { icon: typeof Clock; className: string; label: string }> = {
@@ -20,15 +18,11 @@ const statusConfig: Record<string, { icon: typeof Clock; className: string; labe
 
 export default function LonglistRunsPage() {
   const { data: longlistRuns, isLoading } = useLonglistRuns();
-  const { data: initialRuns } = useRuns();
   const startRun = useStartLonglistRun();
   const resumeRun = useResumeLonglistRun();
-  const [showForm, setShowForm] = useState(false);
-  const [sourceRunId, setSourceRunId] = useState<string>("all");
 
   const handleStart = async () => {
-    await startRun.mutateAsync(sourceRunId === "all" ? undefined : sourceRunId);
-    setShowForm(false);
+    await startRun.mutateAsync();
   };
 
   return (
@@ -39,46 +33,14 @@ export default function LonglistRunsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Longlist Runs</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Process initial list accounts through deterministic filtering stages
+              Process all accounts from the Initial list through deterministic filtering
             </p>
           </div>
-          <Button onClick={() => setShowForm(!showForm)} className="gap-1.5">
-            <Plus className="h-4 w-4" />
+          <Button onClick={handleStart} disabled={startRun.isPending} className="gap-1.5">
+            {startRun.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             New Longlist Run
           </Button>
         </div>
-
-        {showForm && (
-          <Card className="mb-6">
-            <CardContent className="p-4 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Source Initial List Run</label>
-                <Select value={sourceRunId} onValueChange={setSourceRunId}>
-                  <SelectTrigger className="w-72">
-                    <SelectValue placeholder="Select source run" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All initial list runs</SelectItem>
-                    {(initialRuns || []).map((run) => (
-                      <SelectItem key={run.id} value={run.id}>
-                        {new Date(run.created_at).toLocaleDateString("en-US", {
-                          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-                        })} — {run.repo_count} repos
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex gap-2">
-                <Button onClick={handleStart} disabled={startRun.isPending} className="gap-1.5">
-                  {startRun.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                  Start
-                </Button>
-                <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {isLoading ? (
           <div className="space-y-3">
