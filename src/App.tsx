@@ -24,8 +24,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<RunsPage />} />
           <Route path="/longlist" element={<GlobalLonglistPage />} />
-          <Route path="/shortlist" element={<ShortlistPage />} />
-          <Route path="/approach" element={<ApproachPage />} />
+          <Route path="/shortlist" element={<LeadsPage />} />
           <Route path="/runs/:runId/longlist" element={<LonglistPage />} />
           <Route path="/runs/:runId/leads" element={<LeadsPage />} />
           <Route path="/leads" element={<LeadsPage />} />
