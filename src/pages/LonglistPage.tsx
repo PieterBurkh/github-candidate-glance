@@ -102,7 +102,7 @@ export default function LonglistPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">
-              Longlist
+              Initial List
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {filtered.length} repos discovered

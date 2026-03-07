@@ -70,7 +70,7 @@ export default function RunsPage() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Search Runs</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Initial List Runs</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Discover repos via job-mapped nets, extract signals, identify leads
             </p>
@@ -211,7 +211,7 @@ export default function RunsPage() {
                       <Link to={`/runs/${run.id}/longlist`}>
                         <Button variant="ghost" size="sm" className="gap-1.5">
                           <List className="h-3.5 w-3.5" />
-                          Longlist
+                          Initial list
                         </Button>
                       </Link>
                       {canResume && (

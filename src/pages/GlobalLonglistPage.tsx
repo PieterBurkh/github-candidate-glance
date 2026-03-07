@@ -79,7 +79,7 @@ export default function GlobalLonglistPage() {
       <NavBar />
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Longlist</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Initial List</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
             {filtered.length} unique repos from {runCount ?? "…"} runs
             {netFilter !== "all" && ` · filtered by ${NET_LABELS[netFilter] || netFilter}`}
