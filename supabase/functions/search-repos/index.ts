@@ -175,6 +175,7 @@ serve(async (req) => {
   let runId: string | null = null;
   let timedOut = false;
   let totalRepos = 0;
+  let succeeded = false;
 
   try {
     const {
@@ -295,6 +296,7 @@ serve(async (req) => {
     // Final flush
     await flushRepos(supabase, repoMap, flushedKeys);
     totalRepos = repoMap.size;
+    succeeded = true;
 
     return new Response(
       JSON.stringify({ runId: run.id, repoCount: totalRepos, timedOut }),
@@ -306,10 +308,9 @@ serve(async (req) => {
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } finally {
-    // Always update run status
     if (runId) {
       await supabase.from("runs").update({
-        status: "pending",
+        status: succeeded ? "completed" : "failed",
         updated_at: new Date().toISOString(),
         search_params: {
           timed_out: timedOut,
