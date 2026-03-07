@@ -11,6 +11,7 @@ import {
   ArrowRight,
   List,
   Pause,
+  AlertTriangle,
 } from "lucide-react";
 import { useRuns, useStartRun, useRunEnrichment, useResumeRun } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ const statusConfig: Record<string, { icon: typeof Clock; className: string; labe
   pending: { icon: Clock, className: "text-muted-foreground", label: "Pending" },
   running: { icon: Loader2, className: "text-primary animate-spin", label: "Running" },
   paused: { icon: Pause, className: "text-amber-600", label: "Paused" },
+  timed_out: { icon: Clock, className: "text-amber-600", label: "Timed Out" },
   completed: { icon: CheckCircle2, className: "text-green-600", label: "Completed" },
   failed: { icon: XCircle, className: "text-destructive", label: "Failed" },
 };
@@ -159,9 +161,12 @@ export default function RunsPage() {
         ) : runs && runs.length > 0 ? (
           <div className="space-y-3">
             {runs.map((run) => {
-              const config = statusConfig[run.status] || statusConfig.pending;
+              const isLegacyTimedOut = run.status === "completed" && (run.search_params as any)?.timed_out === true;
+              const effectiveStatus = isLegacyTimedOut ? "timed_out" : run.status;
+              const config = statusConfig[effectiveStatus] || statusConfig.pending;
               const StatusIcon = config.icon;
               const nets = (run.search_params as any)?.nets as string[] | undefined;
+              const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
               return (
                 <Card key={run.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center justify-between">
@@ -180,7 +185,13 @@ export default function RunsPage() {
                           <Badge variant="outline" className="text-[10px]">
                             {config.label}
                           </Badge>
-                          {run.status === "paused" && (
+                          {isLegacyTimedOut && (
+                            <Badge variant="secondary" className="text-[10px] text-amber-600 gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Incomplete — resume to finish
+                            </Badge>
+                          )}
+                          {effectiveStatus === "paused" && (
                             <Badge variant="secondary" className="text-[10px] text-amber-600">
                               Partial — resume to continue
                             </Badge>
@@ -203,7 +214,7 @@ export default function RunsPage() {
                           Longlist
                         </Button>
                       </Link>
-                      {run.status === "paused" && (
+                      {canResume && (
                         <Button
                           variant="default"
                           size="sm"
@@ -219,7 +230,7 @@ export default function RunsPage() {
                           Resume
                         </Button>
                       )}
-                      {(run.status === "pending" || run.status === "completed") && (
+                      {(run.status === "pending" || (run.status === "completed" && !isLegacyTimedOut)) && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -231,7 +242,7 @@ export default function RunsPage() {
                           Enrich
                         </Button>
                       )}
-                      {run.status === "completed" && (
+                      {run.status === "completed" && !isLegacyTimedOut && (
                         <Link to={`/runs/${run.id}/leads`}>
                           <Button variant="outline" size="sm" className="gap-1.5">
                             View Leads
