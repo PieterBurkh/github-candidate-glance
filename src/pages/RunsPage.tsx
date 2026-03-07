@@ -54,9 +54,8 @@ export default function RunsPage() {
   };
 
   const handleNewRun = async () => {
-    const result = await startRun.mutateAsync({ nets: selectedNets, perPage });
+    await startRun.mutateAsync({ nets: selectedNets, perPage });
     setShowForm(false);
-    runEnrichment.mutate(result.runId);
   };
 
   return (
@@ -116,7 +115,7 @@ export default function RunsPage() {
               <div className="flex gap-2">
                 <Button
                   onClick={handleNewRun}
-                  disabled={startRun.isPending || runEnrichment.isPending || selectedNets.length === 0}
+                  disabled={startRun.isPending || selectedNets.length === 0}
                   className="gap-1.5"
                 >
                   {startRun.isPending ? (
@@ -124,7 +123,7 @@ export default function RunsPage() {
                   ) : (
                     <Play className="h-4 w-4" />
                   )}
-                  Search & Enrich
+                  Search
                 </Button>
                 <Button variant="outline" onClick={() => setShowForm(false)}>
                   Cancel
@@ -189,7 +188,7 @@ export default function RunsPage() {
                           Longlist
                         </Button>
                       </Link>
-                      {run.status === "pending" && (
+                      {(run.status === "pending" || run.status === "completed") && (
                         <Button
                           variant="outline"
                           size="sm"
