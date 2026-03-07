@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Users, Star } from "lucide-react";
+import { ExternalLink, Users, Star, Download } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment } from "@/hooks/useShortlistData";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,36 @@ export default function LeadsPage() {
     }
     return b.pre_score - a.pre_score;
   });
+
+  const downloadCsv = useCallback(() => {
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const headers = ["rank","login","name","pre_score","tier","status","followers","repos","enriched_score","assessment"];
+    const rows = sorted.map((c, idx) => {
+      const h = c.hydration as any;
+      const e = enrichmentMap[c.login];
+      const rubric = e?.evidence?.find((ev: any) => ev.criterion === "shortlist_rubric")?.evidence as any;
+      return [
+        idx + 1,
+        c.login,
+        escape(h?.name || ""),
+        c.pre_score,
+        c.selection_tier || "",
+        e?.shortlist_status || "pending",
+        h?.followers ?? "",
+        h?.public_repos ?? "",
+        e ? (e.overall_score * 100).toFixed(1) : "",
+        escape(rubric?.assessment || ""),
+      ].join(",");
+    });
+    const csv = [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `shortlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [sorted, enrichmentMap]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,6 +113,10 @@ export default function LeadsPage() {
                 <SelectItem value="enriched">Sort by Enriched</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={downloadCsv} disabled={sorted.length === 0}>
+              <Download className="h-4 w-4 mr-1.5" />
+              CSV
+            </Button>
           </div>
         </div>
 
