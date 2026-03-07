@@ -6,7 +6,6 @@ const links = [
   { to: "/", label: "Runs", icon: Search },
   { to: "/longlist", label: "Longlist", icon: List },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
-  { to: "/leads", label: "Leads", icon: Users },
   { to: "/approach", label: "Approach", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
 ];
