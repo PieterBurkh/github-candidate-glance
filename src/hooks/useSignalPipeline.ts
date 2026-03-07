@@ -202,6 +202,23 @@ export function usePersonEvidence(personId: string) {
   });
 }
 
+// --- Run repos (longlist) ---
+export function useRunRepos(runId: string) {
+  return useQuery({
+    queryKey: ["run-repos", runId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repos")
+        .select("*")
+        .eq("run_id", runId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as Repo[];
+    },
+    enabled: !!runId,
+  });
+}
+
 // --- Repo detail ---
 export function useRepoDetail(fullName: string) {
   return useQuery({
