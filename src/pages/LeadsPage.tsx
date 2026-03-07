@@ -56,7 +56,7 @@ export default function LeadsPage() {
         e?.shortlist_status || "pending",
         h?.followers ?? "",
         h?.public_repos ?? "",
-        e ? (e.overall_score * 100).toFixed(1) : "",
+        e ? (e.overall_score / 100).toFixed(1) : "",
         escape(rubric?.assessment || ""),
       ].join(",");
     });
@@ -110,7 +110,7 @@ export default function LeadsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="score">Sort by Pre-score</SelectItem>
-                <SelectItem value="enriched">Sort by Enriched</SelectItem>
+                <SelectItem value="enriched">Sort by Score</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm" onClick={downloadCsv} disabled={sorted.length === 0}>
@@ -134,7 +134,7 @@ export default function LeadsPage() {
                   <TableHead className="w-28">Status</TableHead>
                   <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Repos</TableHead>
-                  <TableHead className="w-24 text-right">Enriched</TableHead>
+                  <TableHead className="w-24 text-right">Score</TableHead>
                   <TableHead className="min-w-[280px]">Assessment</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
@@ -210,12 +210,9 @@ export default function LeadsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         {enrichment ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <span className="font-mono text-sm font-semibold text-foreground">
-                              {(enrichment.overall_score * 100).toFixed(0)}%
-                            </span>
-                            <Progress value={enrichment.overall_score * 100} className="h-1.5 w-12" />
-                          </div>
+                          <span className="font-mono text-sm font-semibold text-foreground">
+                            {(enrichment.overall_score / 100).toFixed(0)}%
+                          </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">Pending</span>
                         )}
