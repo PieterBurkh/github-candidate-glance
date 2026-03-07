@@ -56,7 +56,7 @@ export default function LeadsPage() {
         e?.shortlist_status || "pending",
         h?.followers ?? "",
         h?.public_repos ?? "",
-        e ? (e.overall_score / 100).toFixed(1) : "",
+        e ? e.overall_score : "",
         escape(rubric?.assessment || ""),
       ].join(",");
     });
@@ -211,7 +211,7 @@ export default function LeadsPage() {
                       <TableCell className="text-right">
                         {enrichment ? (
                           <span className="font-mono text-sm font-semibold text-foreground">
-                            {(enrichment.overall_score / 100).toFixed(0)}%
+                            {enrichment.overall_score}%
                           </span>
                         ) : (
                           <span className="text-xs text-muted-foreground">Pending</span>
