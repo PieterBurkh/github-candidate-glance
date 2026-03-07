@@ -1,1 +1,10 @@
 project_id = "rtcilpxtgvbarxvewaqh"
+
+[functions.enrich-repo]
+verify_jwt = false
+
+[functions.run-enrichment]
+verify_jwt = false
+
+[functions.search-repos]
+verify_jwt = false

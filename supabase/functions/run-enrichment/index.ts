@@ -38,7 +38,7 @@ serve(async (req) => {
     });
 
     const enrichUrl = `${SUPABASE_URL}/functions/v1/enrich-repo`;
-    const batchSize = 3;
+    const batchSize = 2;
     let enriched = 0;
     let failed = 0;
 
@@ -71,9 +71,9 @@ serve(async (req) => {
         }
       }
 
-      // Rate limit pause between batches
+      // Longer pause between batches for LLM rate limits
       if (i + batchSize < repos.length) {
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 3000));
       }
     }
 

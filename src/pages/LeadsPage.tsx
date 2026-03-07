@@ -88,8 +88,14 @@ export default function LeadsPage() {
                       <Progress value={person.overall_score * 100} className="h-2" />
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {person.overall_score > 0 && (
-                        <Badge className="text-[10px]">React+TS</Badge>
+                      {person.overall_score >= 0.8 && (
+                        <Badge className="text-[10px]">A-tier</Badge>
+                      )}
+                      {person.overall_score >= 0.6 && person.overall_score < 0.8 && (
+                        <Badge variant="secondary" className="text-[10px]">B-tier</Badge>
+                      )}
+                      {person.overall_score >= 0.4 && person.overall_score < 0.6 && (
+                        <Badge variant="outline" className="text-[10px]">C-tier</Badge>
                       )}
                       {person.profile.followers && person.profile.followers > 100 && (
                         <Badge variant="outline" className="text-[10px] gap-1">
