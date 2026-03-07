@@ -175,6 +175,7 @@ serve(async (req) => {
   let runId: string | null = null;
   let timedOut = false;
   let totalRepos = 0;
+  let succeeded = false;
 
   try {
     const {
