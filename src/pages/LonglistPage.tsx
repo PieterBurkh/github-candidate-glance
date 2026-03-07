@@ -198,7 +198,7 @@ export default function LonglistPage() {
                     </TableCell>
                     <TableCell>
                       <span className="flex items-center gap-1 text-sm">
-                        <Star className="h-3 w-3 text-amber-500" />
+                        <Star className="h-3 w-3 text-primary" />
                         {(repo.metadata?.stars ?? 0).toLocaleString()}
                       </span>
                     </TableCell>
