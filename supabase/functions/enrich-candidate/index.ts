@@ -214,6 +214,10 @@ You will receive evidence from their top repositories. Score each criterion on a
 11. wasm — WebAssembly usage, Rust/C++ to WASM compilation, performance-critical modules
 12. canvas_webgl — Canvas 2D, WebGL, Three.js, PixiJS, data viz, custom rendering
 
+**Commentary requirements:**
+- Provide must_haves_commentary: 1-2 sentences explaining why you gave those must-have scores, citing specific repos or evidence
+- Provide nice_to_haves_commentary: 1-2 sentences explaining why you gave those nice-to-have scores, citing specific repos or evidence
+
 **Anti-gaming rules:**
 - Downweight template/boilerplate repos (create-react-app defaults, tutorial code)
 - Stars/forks are context only, not direct score contributors
