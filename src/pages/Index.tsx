@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { ArrowUpDown, RefreshCw, AlertTriangle } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowUpDown, RefreshCw, AlertTriangle, FileText } from "lucide-react";
 import { useCandidates } from "@/hooks/useCandidates";
 import { CandidateCard } from "@/components/CandidateCard";
 import { CandidateCardSkeleton } from "@/components/CandidateCardSkeleton";
@@ -27,13 +28,22 @@ const Index = () => {
       {/* Header */}
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-            Senior Frontend Engineer
-          </h1>
+          <Link to="/job" className="group">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl group-hover:text-primary transition-colors">
+              Senior Frontend Engineer
+            </h1>
+          </Link>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
             Candidates discovered via GitHub — developers with strong TypeScript &amp; JavaScript
             profiles, assessed for React, TypeScript, HTML &amp; CSS expertise.
           </p>
+          <Link
+            to="/job"
+            className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            View job description
+          </Link>
         </div>
       </header>
 
