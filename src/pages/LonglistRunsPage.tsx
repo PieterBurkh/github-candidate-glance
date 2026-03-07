@@ -94,6 +94,13 @@ export default function LonglistRunsPage() {
                               {p.pending} pending
                             </span>
                           )}
+                          {p.rate_limited && (
+                            <span className="text-xs text-destructive font-medium">
+                              ⏳ Rate limited — resets {p.reset_at
+                                ? `at ${new Date(p.reset_at * 1000).toLocaleTimeString()}`
+                                : `in ~${p.wait_minutes || '?'} min`}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
