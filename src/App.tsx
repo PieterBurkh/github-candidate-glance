@@ -8,6 +8,9 @@ import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
 import JobDescription from "./pages/JobDescription";
 import LonglistPage from "./pages/LonglistPage";
+import GlobalLonglistPage from "./pages/GlobalLonglistPage";
+import ApproachPage from "./pages/ApproachPage";
+import ShortlistPage from "./pages/ShortlistPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +23,9 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RunsPage />} />
+          <Route path="/longlist" element={<GlobalLonglistPage />} />
+          <Route path="/shortlist" element={<ShortlistPage />} />
+          <Route path="/approach" element={<ApproachPage />} />
           <Route path="/runs/:runId/longlist" element={<LonglistPage />} />
           <Route path="/runs/:runId/leads" element={<LeadsPage />} />
           <Route path="/leads" element={<LeadsPage />} />

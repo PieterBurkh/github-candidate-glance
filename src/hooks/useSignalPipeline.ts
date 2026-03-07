@@ -202,6 +202,47 @@ export function usePersonEvidence(personId: string) {
   });
 }
 
+// --- All repos (global longlist) ---
+export function useAllRepos() {
+  return useQuery({
+    queryKey: ["all-repos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("repos")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      // Deduplicate by full_name, keeping entry with most matched_nets
+      const map = new Map<string, Repo & { run_ids: string[] }>();
+      for (const r of (data || []) as Repo[]) {
+        const existing = map.get(r.full_name);
+        const nets = (r.metadata?.matched_nets as string[]) || [];
+        if (!existing) {
+          map.set(r.full_name, { ...r, run_ids: [r.run_id] });
+        } else {
+          existing.run_ids.push(r.run_id);
+          const existingNets = (existing.metadata?.matched_nets as string[]) || [];
+          const merged = [...new Set([...existingNets, ...nets])];
+          existing.metadata = { ...existing.metadata, matched_nets: merged };
+        }
+      }
+      return Array.from(map.values());
+    },
+  });
+}
+
+export function useRunCount() {
+  return useQuery({
+    queryKey: ["run-count"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("runs").select("id");
+      if (error) throw error;
+      return (data || []).length;
+    },
+  });
+}
+
 // --- Run repos (longlist) ---
 export function useRunRepos(runId: string) {
   return useQuery({

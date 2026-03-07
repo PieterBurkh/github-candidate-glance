@@ -1,11 +1,14 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { FileText, Search, Users } from "lucide-react";
+import { FileText, Search, Users, List, ListFilter, BookOpen } from "lucide-react";
 
 const links = [
   { to: "/", label: "Runs", icon: Search },
-  { to: "/leads", label: "All Leads", icon: Users },
-  { to: "/job", label: "Job Description", icon: FileText },
+  { to: "/longlist", label: "Longlist", icon: List },
+  { to: "/shortlist", label: "Shortlist", icon: ListFilter },
+  { to: "/leads", label: "Leads", icon: Users },
+  { to: "/approach", label: "Approach", icon: BookOpen },
+  { to: "/job", label: "Job Desc", icon: FileText },
 ];
 
 export function NavBar() {
