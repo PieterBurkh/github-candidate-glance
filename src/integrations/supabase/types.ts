@@ -183,6 +183,42 @@ export type Database = {
           },
         ]
       }
+      pipeline_runs: {
+        Row: {
+          config: Json
+          created_at: string
+          error: string | null
+          id: string
+          longlist_run_id: string | null
+          run_id: string | null
+          shortlist_run_id: string | null
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          error?: string | null
+          id?: string
+          longlist_run_id?: string | null
+          run_id?: string | null
+          shortlist_run_id?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          error?: string | null
+          id?: string
+          longlist_run_id?: string | null
+          run_id?: string | null
+          shortlist_run_id?: string | null
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       repo_signals: {
         Row: {
           confidence: number
