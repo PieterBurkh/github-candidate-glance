@@ -457,6 +457,7 @@ serve(async (req) => {
       overall_pct: overallPct,
       summary: scores.summary || "",
       assessment: scores.assessment || "",
+      outreach_draft: scores.outreach_draft || "",
       repos_evaluated: repoEvidences.map(r => r.full_name),
     };
 
