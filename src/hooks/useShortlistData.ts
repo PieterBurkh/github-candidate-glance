@@ -23,6 +23,7 @@ interface EnrichmentEntry {
   shortlist_status: string;
   review_status: string;
   evidence: any[];
+  profile: any;
 }
 
 /**
