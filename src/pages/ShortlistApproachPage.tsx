@@ -20,12 +20,10 @@ const NICE_TO_HAVES = [
   { criterion: "Canvas / WebGL", strong: "Custom canvas rendering, Three.js/PixiJS, WebGL shaders", weak: "No canvas/WebGL usage" },
 ];
 
-export default function ShortlistApproachPage() {
+export function ShortlistApproachContent() {
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Shortlist Approach</h1>
+    <div className="mx-auto max-w-4xl py-8">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Shortlist Approach</h1>
         <p className="text-muted-foreground mb-8">
           How we evaluate Longlist candidates using LLM-powered evidence packs — person-centric, not repo-centric.
         </p>
