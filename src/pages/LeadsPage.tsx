@@ -234,7 +234,7 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={currentReview}
                           onValueChange={(v) => updateReview.mutate({ login: c.login, status: v })}
