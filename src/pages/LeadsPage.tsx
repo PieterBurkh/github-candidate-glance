@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ExternalLink, Users, Star, Download, Mail } from "lucide-react";
+import { ExternalLink, Star, Download } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
 import { categorizeLocation, type LocationCategory } from "@/lib/categorizeLocation";
