@@ -54,14 +54,13 @@ async function processShortlist(shortlistRunId: string) {
   }
   const uniqueLogins = [...seen.keys()]; // already in score-descending order
 
-  // Step 2: Find which logins already have a non-pending shortlist_status
+  // Step 2: Find which logins already have a people record (already enriched)
   const processedLogins = new Set<string>();
   for (let i = 0; i < uniqueLogins.length; i += PAGE_SIZE) {
     const batch = uniqueLogins.slice(i, i + PAGE_SIZE);
     const { data: done } = await sb.from("people")
       .select("login")
-      .in("login", batch)
-      .neq("shortlist_status", "pending");
+      .in("login", batch);
     if (done) done.forEach((p: any) => processedLogins.add(p.login));
   }
 
