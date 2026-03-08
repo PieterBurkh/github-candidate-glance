@@ -353,22 +353,6 @@ export default function LeadsPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {rubric?.outreach_draft ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="text-[11px] text-muted-foreground line-clamp-2 cursor-help max-w-[220px]">
-                                {rubric.outreach_draft}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-sm text-xs">
-                              {rubric.outreach_draft}
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
                         {h?.html_url && (
                           <Button variant="ghost" size="icon" asChild className="h-7 w-7">
                             <a href={h.html_url} target="_blank" rel="noopener noreferrer">
