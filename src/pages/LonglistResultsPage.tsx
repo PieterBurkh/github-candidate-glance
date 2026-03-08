@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useDynamicLonglist } from "@/hooks/useLonglistPipeline";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NavBar } from "@/components/NavBar";
 import {
@@ -12,9 +11,8 @@ import {
 } from "@/components/ui/select";
 
 export default function LonglistResultsPage() {
-  const [tierFilter, setTierFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "confidence">("score");
-  const { data: candidates, isLoading } = useDynamicLonglist(tierFilter || undefined);
+  const { data: candidates, isLoading } = useDynamicLonglist();
 
   const sorted = [...(candidates || [])].sort((a, b) =>
     sortBy === "score" ? b.pre_score - a.pre_score : b.pre_confidence - a.pre_confidence

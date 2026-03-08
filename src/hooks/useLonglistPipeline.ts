@@ -137,24 +137,9 @@ export function useLonglistCandidates(longlistRunId?: string, tierFilter?: strin
   });
 }
 
-export type DynamicLonglistCandidate = LonglistCandidate & { computed_tier: "exploit" | "explore" };
-
-function countQualitySignals(repoSignals: any): number {
-  if (!repoSignals || typeof repoSignals !== "object") return 0;
-  let count = 0;
-  for (const sig of Object.values(repoSignals) as any[]) {
-    if (sig.has_ci) count++;
-    if (sig.has_tests_dir) count++;
-    if (sig.storybook) count++;
-    count += (sig.complex_libs || []).length;
-    count += (sig.testing || []).length;
-  }
-  return count;
-}
-
-export function useDynamicLonglist(tierFilter?: string) {
+export function useDynamicLonglist() {
   return useQuery({
-    queryKey: ["dynamic-longlist", tierFilter],
+    queryKey: ["dynamic-longlist"],
     queryFn: async () => {
       const query = supabase
         .from("longlist_candidates")
@@ -175,26 +160,8 @@ export function useDynamicLonglist(tierFilter?: string) {
           seen.set(c.login, c);
         }
       }
-      const unique = [...seen.values()].sort((a, b) => b.pre_score - a.pre_score);
 
-      // Top 400 → exploit
-      const exploit: DynamicLonglistCandidate[] = unique.slice(0, 400).map(c => ({ ...c, computed_tier: "exploit" as const }));
-
-      // From remainder, pick top 100 by signal diversity → explore
-      const remainder = unique.slice(400);
-      remainder.sort((a, b) => countQualitySignals(b.repo_signals) - countQualitySignals(a.repo_signals));
-      const explore: DynamicLonglistCandidate[] = remainder.slice(0, 100).map(c => ({ ...c, computed_tier: "explore" as const }));
-
-      let result = [...exploit, ...explore];
-
-      if (tierFilter) {
-        result = result.filter(c => c.computed_tier === tierFilter);
-      }
-
-      // Sort final result by pre_score desc
-      result.sort((a, b) => b.pre_score - a.pre_score);
-
-      return result;
+      return [...seen.values()].sort((a, b) => b.pre_score - a.pre_score);
     },
     refetchInterval: 10000,
   });
