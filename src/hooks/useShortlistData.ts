@@ -59,6 +59,7 @@ export function useShortlistEnrichment() {
           shortlist_status: p.shortlist_status || "pending",
           review_status: p.review_status || "pending",
           evidence: evidenceByPerson.get(p.id) || [],
+          profile: p.profile || {},
         };
       }
       return map;
