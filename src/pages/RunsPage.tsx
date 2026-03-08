@@ -168,7 +168,10 @@ export default function RunsPage() {
               const config = statusConfig[effectiveStatus] || statusConfig.pending;
               const StatusIcon = config.icon;
               const nets = (run.search_params as any)?.nets as string[] | undefined;
-              const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
+               const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
+              const canPause = run.status === "running";
+              const isThisResuming = activeRunId === run.id && resumeRun.isPending;
+              const isThisPausing = activeRunId === run.id && pauseRun.isPending;
               return (
                 <Card key={run.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center justify-between">
