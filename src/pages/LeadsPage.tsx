@@ -50,7 +50,6 @@ export default function LeadsPage() {
   const enrichedOnly = (candidates || []).filter(c => {
     const e = enrichmentMap[c.login];
     if (!e) return false;
-    if (statusFilter && e.shortlist_status !== statusFilter) return false;
     if (reviewFilter && e.review_status !== reviewFilter) return false;
     if (locationFilter) {
       const loc = categorizeLocation(e.profile?.location);
