@@ -18,7 +18,7 @@ function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
-async function processShortlist(shortlistRunId: string) {
+async function processShortlist(shortlistRunId: string, longlistRunId?: string) {
   const startTime = Date.now();
   function timedOut() { return (Date.now() - startTime) > (DEADLINE_MS - 10000); }
 
