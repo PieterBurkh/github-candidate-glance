@@ -191,33 +191,8 @@ export function RunsContent() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Link to={`/runs/${run.id}/longlist`}>
-                      <Button variant="ghost" size="sm" className="gap-1.5">
-                        <List className="h-3.5 w-3.5" />
-                        Initial list
-                      </Button>
-                    </Link>
-                    {canPause && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5"
-                        onClick={() => {
-                          setActiveRunId(run.id);
-                          pauseRun.mutate(run.id, { onSettled: () => setActiveRunId(null) });
-                        }}
-                        disabled={isThisPausing}
-                      >
-                        {isThisPausing ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Pause className="h-3.5 w-3.5" />
-                        )}
-                        Pause
-                      </Button>
-                    )}
-                    {canResume && (
+                  {canResume && (
+                    <div className="flex items-center gap-2">
                       <Button
                         variant="default"
                         size="sm"
@@ -235,28 +210,8 @@ export function RunsContent() {
                         )}
                         Resume
                       </Button>
-                    )}
-                    {(run.status === "pending" || (run.status === "completed" && !isLegacyTimedOut)) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5"
-                        onClick={() => runEnrichment.mutate(run.id)}
-                        disabled={runEnrichment.isPending}
-                      >
-                        <Zap className="h-3.5 w-3.5" />
-                        Enrich
-                      </Button>
-                    )}
-                    {run.status === "completed" && !isLegacyTimedOut && (
-                      <Link to={`/runs/${run.id}/leads`}>
-                        <Button variant="outline" size="sm" className="gap-1.5">
-                          View Leads
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Button>
-                      </Link>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
