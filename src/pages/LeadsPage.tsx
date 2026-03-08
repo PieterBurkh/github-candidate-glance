@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ExternalLink, Users, Star, Download, Mail } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
@@ -55,6 +55,7 @@ function meetsLocationThreshold(score: number, location: LocationCategory): bool
 export default function LeadsPage() {
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
+  const navigate = useNavigate();
   
   const { data: candidates, isLoading } = useLonglistCandidates();
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
@@ -208,7 +209,7 @@ export default function LeadsPage() {
                   
 
                   return (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/leads/${c.login}`)}>
                       <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -233,7 +234,7 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <Select
                           value={currentReview}
                           onValueChange={(v) => updateReview.mutate({ login: c.login, status: v })}
@@ -255,7 +256,7 @@ export default function LeadsPage() {
                           {locCategory}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs" onClick={(e) => e.stopPropagation()}>
                         {prof?.email ? (
                           <a href={`mailto:${prof.email}`} className="text-muted-foreground hover:text-primary flex items-center gap-1">
                             <Mail className="h-3 w-3" />
@@ -300,7 +301,7 @@ export default function LeadsPage() {
                           <span className="text-xs text-muted-foreground">–</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         {h?.html_url && (
                           <Button variant="ghost" size="icon" asChild className="h-7 w-7">
                             <a href={h.html_url} target="_blank" rel="noopener noreferrer">
