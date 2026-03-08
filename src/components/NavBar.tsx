@@ -6,7 +6,7 @@ const links = [
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
   { to: "/longlist-results", label: "Longlist", icon: Users },
   { to: "/sourcing", label: "Sourcing", icon: Search },
-  { to: "/approach", label: "Search & Scoring", icon: BookOpen },
+  { to: "/approach", label: "Sourcing Methodology", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
 ];
 
