@@ -124,16 +124,13 @@ export function useDynamicLonglist() {
   return useQuery({
     queryKey: ["dynamic-longlist"],
     queryFn: async () => {
-      const query = supabase
-        .from("longlist_candidates")
-        .select("*")
-        .eq("stage", "scored")
-        .gte("pre_score", 70)
-        .lte("pre_score", 82)
-        .order("pre_score", { ascending: false });
-
       const allScored = await fetchAllRows<LonglistCandidate>((from, to) =>
-        query.range(from, to)
+        supabase
+          .from("longlist_candidates")
+          .select("*")
+          .eq("stage", "scored")
+          .order("pre_score", { ascending: false })
+          .range(from, to)
       );
 
       // Deduplicate by login (keep highest score)
