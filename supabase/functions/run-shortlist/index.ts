@@ -224,7 +224,7 @@ Deno.serve(async (req) => {
     if (!shortlistRunId) throw new Error("shortlistRunId required");
 
     EdgeRuntime.waitUntil(
-      processShortlist(shortlistRunId).catch(async (error) => {
+      processShortlist(shortlistRunId, longlistRunId).catch(async (error) => {
         console.error(`Shortlist run ${shortlistRunId} failed:`, error);
         const sb = createSb();
         await sb.from("shortlist_runs").update({
