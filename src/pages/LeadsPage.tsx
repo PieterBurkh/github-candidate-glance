@@ -157,16 +157,6 @@ export default function LeadsPage() {
                 <SelectItem value="pending">Pending</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={tierFilter || "all"} onValueChange={(v) => setTierFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="All tiers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tiers</SelectItem>
-                <SelectItem value="exploit">Exploit</SelectItem>
-                <SelectItem value="explore">Explore</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={locationFilter || "all"} onValueChange={(v) => setLocationFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All locations" />
@@ -206,7 +196,6 @@ export default function LeadsPage() {
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Candidate</TableHead>
                   <TableHead className="w-20 text-right">Pre-score</TableHead>
-                  <TableHead className="w-24">Tier</TableHead>
                   <TableHead className="w-28">Status</TableHead>
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
@@ -257,14 +246,6 @@ export default function LeadsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={c.selection_tier === "exploit" ? "default" : "secondary"}
-                          className="text-[10px]"
-                        >
-                          {c.selection_tier}
-                        </Badge>
-                      </TableCell>
                       <TableCell>
                         {(() => {
                           const status = enrichment?.shortlist_status || "pending";
