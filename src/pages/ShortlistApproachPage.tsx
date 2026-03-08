@@ -71,7 +71,6 @@ export function ShortlistApproachContent() {
                 { artifact: "CHANGELOG.md", detail: "Header + last 2 release entries" },
                 { artifact: "Presence flags", detail: "Boolean: .storybook/, .github/workflows/, test dirs" },
                 { artifact: "Releases/tags", detail: "Semver count + last release date" },
-                { artifact: "PR/issue samples", detail: "Max 3 threads with keywords (perf, RFC, ADR, migration, lighthouse)" },
               ].map((a) => (
                 <div key={a.artifact} className="flex items-start gap-3 rounded-md border border-border px-3 py-2">
                   <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono whitespace-nowrap">{a.artifact}</code>
