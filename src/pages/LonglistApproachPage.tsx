@@ -152,11 +152,11 @@ export default function LonglistApproachPage() {
             </p>
             <div className="grid gap-3 sm:grid-cols-2 mt-2">
               <div className="rounded-md border border-border p-3">
-                <div className="font-semibold text-foreground text-sm mb-1">800 × Exploit</div>
+               <div className="font-semibold text-foreground text-sm mb-1">400 × Exploit</div>
                 <p className="text-xs">Top scorers by pre_score. These are the highest-signal candidates.</p>
               </div>
               <div className="rounded-md border border-border p-3">
-                <div className="font-semibold text-foreground text-sm mb-1">200 × Explore</div>
+                <div className="font-semibold text-foreground text-sm mb-1">100 × Explore</div>
                 <p className="text-xs">
                   Diverse signal candidates with ≥ 2 quality signals but lower overall scores.
                   Ensures we don't miss unconventional profiles.
@@ -165,7 +165,7 @@ export default function LonglistApproachPage() {
             </div>
             <p>
               All remaining candidates are marked as <strong className="text-foreground">discarded</strong>.
-              The selected 1,000 candidates form the final Longlist.
+              The selected 500 candidates form the final Longlist.
             </p>
           </CardContent>
         </Card>

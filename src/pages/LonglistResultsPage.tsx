@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
-import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
+import { useDynamicLonglist } from "@/hooks/useLonglistPipeline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NavBar } from "@/components/NavBar";
@@ -14,7 +14,7 @@ import {
 export default function LonglistResultsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "confidence">("score");
-  const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
+  const { data: candidates, isLoading } = useDynamicLonglist(tierFilter || undefined);
 
   const sorted = [...(candidates || [])].sort((a, b) =>
     sortBy === "score" ? b.pre_score - a.pre_score : b.pre_confidence - a.pre_confidence
@@ -49,7 +49,7 @@ export default function LonglistResultsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Longlist</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {sorted.length} candidates that survived deterministic filtering
+              Top {sorted.length} candidates (400 exploit + 100 explore)
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -111,8 +111,8 @@ export default function LonglistResultsPage() {
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{Math.round(c.pre_confidence * 100)}%</TableCell>
                       <TableCell>
-                        <Badge variant={c.selection_tier === "exploit" ? "default" : "secondary"} className="text-[10px]">
-                          {c.selection_tier}
+                        <Badge variant={c.computed_tier === "exploit" ? "default" : "secondary"} className="text-[10px]">
+                          {c.computed_tier}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
