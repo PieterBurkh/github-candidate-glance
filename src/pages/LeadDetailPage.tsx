@@ -154,61 +154,15 @@ export default function LeadDetailPage() {
           );
         })()}
 
-        {/* Evidence */}
-        <h2 className="text-lg font-semibold text-foreground mb-3">Signal Evidence</h2>
-        {evidence && evidence.length > 0 ? (
-          <div className="space-y-6">
-            {evidence.map((ev) => {
-              const isNewFormat = ev.criterion === "code_quality" && (ev.evidence as any)?.categories;
-              const categories = isNewFormat ? (ev.evidence as any).categories : null;
-              const summary = isNewFormat ? (ev.evidence as any).summary : null;
-
-              return (
-                <div key={ev.id} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Badge className="text-xs">{ev.criterion === "code_quality" ? "Code Quality (LLM)" : ev.criterion}</Badge>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-foreground">
-                        {(ev.score * 100).toFixed(0)}%
-                      </span>
-                      <Progress value={ev.score * 100} className="h-2 w-20" />
-                    </div>
-                  </div>
-
-                  {summary && (
-                    <p className="text-sm text-muted-foreground italic">{summary}</p>
-                  )}
-
-                  {categories ? (
-                    <CategoryBreakdown categories={categories} />
-                  ) : (
-                    /* Legacy format */
-                    <Card>
-                      <CardContent className="p-4">
-                        <div className="space-y-1.5">
-                          {(Array.isArray(ev.evidence) ? ev.evidence : []).map((e: any, idx: number) => (
-                            <a
-                              key={idx}
-                              href={e.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
-                            >
-                              <ExternalLink className="h-3 w-3 shrink-0" />
-                              <span>{e.label}</span>
-                            </a>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No evidence collected yet.</p>
-        )}
+        {/* Rubric Breakdown */}
+        {(() => {
+          const rubric = evidence?.find(ev => ev.criterion === "shortlist_rubric");
+          const rubricData = rubric ? (rubric.evidence as any) : null;
+          if (rubricData?.must_haves || rubricData?.nice_to_haves) {
+            return <RubricBreakdown rubricEvidence={rubricData} />;
+          }
+          return <p className="text-sm text-muted-foreground">No evaluation data yet.</p>;
+        })()}
       </div>
     </div>
   );
