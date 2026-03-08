@@ -58,10 +58,9 @@ export function ShortlistApproachContent() {
               For each candidate, we select up to <strong className="text-foreground">4 representative repos</strong> using these rules:
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li><strong className="text-foreground">Pinned repos</strong> — profile-pinned or top-starred owned repos</li>
-              <li><strong className="text-foreground">Most recently pushed</strong> — activity signal</li>
-              <li><strong className="text-foreground">Most maintained</strong> — has releases + CI + tests</li>
-              <li><strong className="text-foreground">Contributed repo</strong> — PR in an org repo (if available)</li>
+              <li><strong className="text-foreground">Top 2 by stars</strong> — popularity signal from owned repos</li>
+              <li><strong className="text-foreground">Top 2 by most recent push</strong> — activity signal</li>
+              <li>Remaining slots filled from other repos, deduplicated</li>
             </ul>
             <p className="mt-3">Per repo, we collect these artifacts (compact, not full source):</p>
             <div className="grid gap-2 mt-2">
