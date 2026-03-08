@@ -79,12 +79,18 @@ export default function LeadDetailPage() {
     <div className="min-h-screen bg-background">
       <NavBar />
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <Link to="/">
-          <Button variant="ghost" size="sm" className="gap-1.5 mb-4">
-            <ArrowLeft className="h-4 w-4" />
-            Back
+        <div className="flex items-center gap-2 mb-4">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={handleDownloadCsv}>
+            <Download className="h-4 w-4" />
+            Download CSV
           </Button>
-        </Link>
+        </div>
 
         {/* Profile header */}
         <Card className="mb-6">
