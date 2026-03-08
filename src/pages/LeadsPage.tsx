@@ -71,11 +71,13 @@ export default function LeadsPage() {
 
   const downloadCsv = useCallback(() => {
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const headers = ["rank","login","name","pre_score","tier","status","review_status","followers","repos","enriched_score","assessment","outreach_draft"];
+    const headers = ["rank","login","name","pre_score","tier","status","review_status","location","location_category","email","linkedin","followers","repos","enriched_score","assessment","outreach_draft"];
     const rows = sorted.map((c, idx) => {
       const h = c.hydration as any;
       const e = enrichmentMap[c.login];
+      const prof = e?.profile || {};
       const rubric = e?.evidence?.find((ev: any) => ev.criterion === "shortlist_rubric")?.evidence as any;
+      const linkedIn = extractLinkedIn(prof);
       return [
         idx + 1,
         c.login,
@@ -84,6 +86,10 @@ export default function LeadsPage() {
         c.selection_tier || "",
         e?.shortlist_status || "pending",
         e?.review_status || "pending",
+        escape(prof.location || ""),
+        categorizeLocation(prof.location),
+        prof.email || "",
+        linkedIn || "",
         h?.followers ?? "",
         h?.public_repos ?? "",
         e ? e.overall_score : "",
