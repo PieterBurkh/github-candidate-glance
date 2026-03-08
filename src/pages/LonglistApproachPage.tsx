@@ -165,7 +165,7 @@ export default function LonglistApproachPage() {
             </div>
             <p>
               All remaining candidates are marked as <strong className="text-foreground">discarded</strong>.
-              The selected 1,000 candidates form the final Longlist.
+              The selected 500 candidates form the final Longlist.
             </p>
           </CardContent>
         </Card>
