@@ -233,17 +233,6 @@ export default function LeadsPage() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell>
-                        {(() => {
-                          const status = enrichment?.shortlist_status || "pending";
-                          const variant = status === "SHORTLIST" ? "default" : status === "NEEDS_REVIEW" ? "secondary" : "outline";
-                          return (
-                            <Badge variant={variant} className="text-[10px]">
-                              {status === "NEEDS_REVIEW" ? "Needs Review" : status.charAt(0) + status.slice(1).toLowerCase()}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
-                      <TableCell>
                         <Select
                           value={currentReview}
                           onValueChange={(v) => updateReview.mutate({ login: c.login, status: v })}

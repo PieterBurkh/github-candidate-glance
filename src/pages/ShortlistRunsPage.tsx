@@ -72,12 +72,6 @@ export default function ShortlistRunsPage() {
                           {p.enriched != null && (
                             <span className="text-xs text-muted-foreground">{p.enriched} enriched</span>
                           )}
-                          {p.shortlisted != null && (
-                            <span className="text-xs text-green-600 font-medium">{p.shortlisted} shortlisted</span>
-                          )}
-                          {p.needs_review != null && (
-                            <span className="text-xs text-amber-600">{p.needs_review} needs review</span>
-                          )}
                           {p.failed != null && p.failed > 0 && (
                             <span className="text-xs text-destructive">{p.failed} failed</span>
                           )}

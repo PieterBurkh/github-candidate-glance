@@ -210,12 +210,6 @@ async function processShortlist(shortlistRunId: string) {
   console.log(`Self-chaining shortlist run ${shortlistRunId}...`);
 }
 
-async function getStats(sb: any) {
-  const { count: shortlisted } = await sb.from("people").select("id", { count: "exact", head: true }).eq("shortlist_status", "SHORTLIST");
-  const { count: needs_review } = await sb.from("people").select("id", { count: "exact", head: true }).eq("shortlist_status", "NEEDS_REVIEW");
-  const { count: rejected } = await sb.from("people").select("id", { count: "exact", head: true }).eq("shortlist_status", "NO");
-  return { shortlisted: shortlisted || 0, needs_review: needs_review || 0, rejected: rejected || 0 };
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

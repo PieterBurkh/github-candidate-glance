@@ -434,7 +434,7 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({
-      login, shortlist_status: shortlistStatus, overall_pct: overallPct,
+      login, overall_pct: overallPct,
       must_avg: Math.round(mustAvg * 100) / 100, nice_avg: Math.round(niceAvg * 100) / 100,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
