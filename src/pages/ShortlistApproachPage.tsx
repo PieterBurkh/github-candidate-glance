@@ -3,12 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const MUST_HAVES = [
-  { criterion: "React + TypeScript + modern HTML/CSS", strong: "Production React app with strict TS, semantic HTML, CSS modules or Tailwind", weak: "Tutorial-style todo app with any types" },
-  { criterion: "Architecting rich apps with complex interactions", strong: "State machines, optimistic updates, complex forms, drag-and-drop", weak: "Simple CRUD with basic useState" },
-  { criterion: "Documentation + versioning for external audiences", strong: "Versioned README, CHANGELOG, API docs, migration guides", weak: "Auto-generated docs only, no changelog" },
-  { criterion: "Performance profiling / debugging", strong: "Lighthouse configs, bundle analysis, React.memo usage with comments, lazy loading", weak: "No evidence of performance consideration" },
-  { criterion: "Technical leadership + standards mediation", strong: "RFC/ADR documents, PR reviews with architectural feedback, ESLint/Prettier configs", weak: "Solo contributor, no evidence of team standards" },
-  { criterion: "English communication + async comfort", strong: "Clear PR descriptions, issue discussions, README prose in fluent English", weak: "Minimal or non-English communication" },
+  { criterion: "React + TypeScript + modern HTML/CSS", weight: 2.0, strong: "Production React app with strict TS, semantic HTML, CSS modules or Tailwind", weak: "Tutorial-style todo app with any types" },
+  { criterion: "Architecting rich apps with complex interactions", weight: 2.0, strong: "State machines, optimistic updates, complex forms, drag-and-drop", weak: "Simple CRUD with basic useState" },
+  { criterion: "Performance profiling / debugging", weight: 1.5, strong: "Lighthouse configs, bundle analysis, React.memo usage with comments, lazy loading", weak: "No evidence of performance consideration" },
+  { criterion: "Documentation + versioning for external audiences", weight: 1.0, strong: "Versioned README, CHANGELOG, API docs, migration guides", weak: "Auto-generated docs only, no changelog" },
 ];
 
 const NICE_TO_HAVES = [
