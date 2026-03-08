@@ -79,6 +79,7 @@ export default function LeadDetailPage() {
   const { login } = useParams<{ login: string }>();
   const { data: person, isLoading } = usePersonDetail(login || "");
   const { data: evidence } = usePersonEvidence(person?.id || "");
+  const updateReview = useUpdateReviewStatus();
 
   const handleDownloadCsv = () => {
     if (!person) return;
