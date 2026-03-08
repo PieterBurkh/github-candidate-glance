@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.run-shortlist]
 verify_jwt = false
+
+[functions.run-pipeline]
+verify_jwt = false

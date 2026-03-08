@@ -28,6 +28,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RunsPage />} />
+          <Route path="/pipeline" element={<PipelineRunsPage />} />
           <Route path="/longlist" element={<GlobalLonglistPage />} />
           <Route path="/longlist-runs" element={<LonglistRunsPage />} />
           <Route path="/longlist-results" element={<LonglistResultsPage />} />

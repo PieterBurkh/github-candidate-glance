@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { FileText, Search, Users, List, ListFilter, BookOpen, Filter, Play } from "lucide-react";
 
 const links = [
+  { to: "/pipeline", label: "Runs", icon: Play },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
   { to: "/shortlist-runs", label: "Shortlist runs", icon: Filter },
   { to: "/longlist-results", label: "Longlist", icon: Users },
