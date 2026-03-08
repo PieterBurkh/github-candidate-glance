@@ -78,18 +78,18 @@ export default function StartHerePage() {
           </CardContent>
         </Card>
 
-        {/* Add New Candidates Section */}
+        {/* Sourcing Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
               <Link to="/sourcing" className="hover:underline inline-flex items-center gap-1.5">
-                Add New Candidates <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                Sourcing <ExternalLink className="h-4 w-4 text-muted-foreground" />
               </Link>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground leading-relaxed">
             <p>
-              Next we have our Add New Candidates page. In order to add new candidates, you need to perform the following runs (in this order):
+              Next we have our Sourcing page. In order to add new candidates, you need to perform the following runs (in this order):
             </p>
             <ol className="list-decimal list-inside space-y-0.5 pl-1 font-medium text-foreground">
               <li>Initial List Run</li>
