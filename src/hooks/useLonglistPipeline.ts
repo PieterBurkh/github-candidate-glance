@@ -95,37 +95,20 @@ export function useResumeLonglistRun() {
   });
 }
 
-export function useLonglistCandidates(longlistRunId?: string, tierFilter?: string) {
+export function useLonglistCandidates(longlistRunId?: string) {
   return useQuery({
-    queryKey: ["longlist-candidates", longlistRunId, tierFilter],
+    queryKey: ["longlist-candidates", longlistRunId],
     queryFn: async () => {
-      if (longlistRunId) {
-        let query = supabase
-          .from("longlist_candidates")
-          .select("*")
-          .eq("longlist_run_id", longlistRunId)
-          .not("selection_tier", "is", null)
-          .order("pre_score", { ascending: false });
-
-        if (tierFilter) {
-          query = query.eq("selection_tier", tierFilter);
-        }
-
-        const data = await fetchAllRows<LonglistCandidate>((from, to) =>
-          query.range(from, to)
-        );
-        return data;
-      }
-
-      // All selected candidates across all runs
       let query = supabase
         .from("longlist_candidates")
         .select("*")
-        .not("selection_tier", "is", null)
+        .eq("stage", "scored")
+        .gte("pre_score", 70)
+        .lte("pre_score", 82)
         .order("pre_score", { ascending: false });
 
-      if (tierFilter) {
-        query = query.eq("selection_tier", tierFilter);
+      if (longlistRunId) {
+        query = query.eq("longlist_run_id", longlistRunId);
       }
 
       const data = await fetchAllRows<LonglistCandidate>((from, to) =>
@@ -144,8 +127,9 @@ export function useDynamicLonglist() {
       const query = supabase
         .from("longlist_candidates")
         .select("*")
+        .eq("stage", "scored")
         .gte("pre_score", 70)
-        .or('discard_reason.is.null,and(discard_reason.not.in.("organization","not_found","no_repos"))')
+        .lte("pre_score", 82)
         .order("pre_score", { ascending: false });
 
       const allScored = await fetchAllRows<LonglistCandidate>((from, to) =>

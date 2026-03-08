@@ -43,7 +43,7 @@ export default function LeadsPage() {
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
   
-  const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
+  const { data: candidates, isLoading } = useLonglistCandidates();
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
   const updateReview = useUpdateReviewStatus();
 
