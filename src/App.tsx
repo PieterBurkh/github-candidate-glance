@@ -10,9 +10,7 @@ import JobDescription from "./pages/JobDescription";
 import LonglistPage from "./pages/LonglistPage";
 import GlobalLonglistPage from "./pages/GlobalLonglistPage";
 import LonglistResultsPage from "./pages/LonglistResultsPage";
-import ApproachPage from "./pages/ApproachPage";
-import LonglistApproachPage from "./pages/LonglistApproachPage";
-import ShortlistApproachPage from "./pages/ShortlistApproachPage";
+import ApproachOverviewPage from "./pages/ApproachOverviewPage";
 
 import NotFound from "./pages/NotFound";
 
