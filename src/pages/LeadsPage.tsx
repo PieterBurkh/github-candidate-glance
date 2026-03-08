@@ -152,6 +152,18 @@ export default function LeadsPage() {
                 <SelectItem value="explore">Explore</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={locationFilter || "all"} onValueChange={(v) => setLocationFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All locations</SelectItem>
+                <SelectItem value="Germany">Germany</SelectItem>
+                <SelectItem value="UK">UK</SelectItem>
+                <SelectItem value="Rest of Europe">Rest of Europe</SelectItem>
+                <SelectItem value="Rest of World">Rest of World</SelectItem>
+                <SelectItem value="N/A">N/A</SelectItem>
+              </SelectContent>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
