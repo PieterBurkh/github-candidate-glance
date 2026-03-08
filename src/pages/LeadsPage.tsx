@@ -225,7 +225,6 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell>
                         <Select
                           value={currentReview}
