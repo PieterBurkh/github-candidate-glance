@@ -347,10 +347,10 @@ serve(async (req) => {
       const { data: person } = await supabase.from("people").select("id").eq("login", login).maybeSingle();
       if (person) {
         await supabase.from("people").update({
-          shortlist_status: "NO", overall_score: 0, updated_at: new Date().toISOString(),
+          overall_score: 0, updated_at: new Date().toISOString(),
         }).eq("id", person.id);
       }
-      return new Response(JSON.stringify({ login, status: "NO", reason: "no_evidence" }), {
+      return new Response(JSON.stringify({ login, overall_pct: 0, reason: "no_evidence" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
