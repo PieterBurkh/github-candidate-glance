@@ -257,14 +257,6 @@ export default function LeadsPage() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={c.selection_tier === "exploit" ? "default" : "secondary"}
-                          className="text-[10px]"
-                        >
-                          {c.selection_tier}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
                         {(() => {
                           const status = enrichment?.shortlist_status || "pending";
                           const variant = status === "SHORTLIST" ? "default" : status === "NEEDS_REVIEW" ? "secondary" : "outline";
