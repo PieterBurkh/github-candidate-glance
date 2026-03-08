@@ -267,22 +267,6 @@ export default function LeadsPage() {
                           <span className="text-muted-foreground">–</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right text-sm">
-                        {h?.public_repos != null ? (
-                          <span className="text-muted-foreground">{h.public_repos}</span>
-                        ) : (
-                          <span className="text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {enrichment ? (
-                          <span className="font-mono text-sm font-semibold text-foreground">
-                            {enrichment.overall_score}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Pending</span>
-                        )}
-                      </TableCell>
                       <TableCell>
                         {rubric?.assessment ? (
                           <Tooltip>
