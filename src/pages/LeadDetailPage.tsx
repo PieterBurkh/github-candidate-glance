@@ -13,14 +13,36 @@ import {
   Download,
 } from "lucide-react";
 import { usePersonDetail, usePersonEvidence } from "@/hooks/useSignalPipeline";
+import { useUpdateReviewStatus } from "@/hooks/useShortlistData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { NavBar } from "@/components/NavBar";
 import { RubricBreakdown } from "@/components/RubricBreakdown";
 import { categorizeLocation } from "@/lib/categorizeLocation";
+
+const REVIEW_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "shortlisted", label: "Shortlisted" },
+  { value: "on_hold", label: "On hold" },
+  { value: "rejected", label: "Rejected" },
+] as const;
+
+function reviewBadgeVariant(status: string) {
+  switch (status) {
+    case "shortlisted": return "default";
+    case "on_hold": return "secondary";
+    case "rejected": return "destructive";
+    default: return "outline";
+  }
+}
+
+function reviewLabel(status: string) {
+  return REVIEW_OPTIONS.find(o => o.value === status)?.label ?? "Pending";
+}
 
 function OutreachCard({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
