@@ -24,10 +24,7 @@ export function NavBar() {
         </Link>
         <nav className="flex items-center gap-1">
           {links.map(({ to, label, icon: Icon }) => {
-            const isActive =
-              to === "/"
-                ? location.pathname === "/" || location.pathname.startsWith("/runs")
-                : location.pathname.startsWith(to);
+            const isActive = location.pathname.startsWith(to);
             return (
               <Link
                 key={to}
