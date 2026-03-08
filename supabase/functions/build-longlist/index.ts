@@ -340,10 +340,8 @@ async function processLonglist(longlistRunId: string) {
           }
         }
 
-        // Discard the rest across all runs
-        await sb.from("longlist_candidates")
-          .update({ stage: "discarded", discard_reason: "below_threshold", selection_tier: null, updated_at: new Date().toISOString() })
-          .eq("stage", "scored").is("selection_tier", null);
+        // Leave remaining scored candidates as-is (no selection_tier)
+        // Client-side dynamic selection handles ranking
       }
 
       console.log(`Global Stage 3: ${inlineExploitCount} inline exploit + ${exploitSlots} slots filled`);
