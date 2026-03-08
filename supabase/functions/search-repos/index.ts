@@ -387,6 +387,18 @@ serve(async (req) => {
             for (let page = startPage; page <= endPage; page++) {
               if (Date.now() > deadline) { timedOut = true; break; }
 
+              // Check if user requested a pause
+              const { data: statusCheck } = await supabase
+                .from("runs")
+                .select("status")
+                .eq("id", runId)
+                .single();
+              if (statusCheck?.status === "pausing") {
+                console.log(`Run ${runId} pause requested by user`);
+                timedOut = true;
+                break;
+              }
+
               // Skip iterations before cursor position (for resume)
               if (shouldSkip(cursor, netIdx, queryIdx, bandIdx, sortIdx, page)) {
                 continue;

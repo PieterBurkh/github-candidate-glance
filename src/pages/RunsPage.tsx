@@ -219,15 +219,37 @@ export default function RunsPage() {
                           Initial list
                         </Button>
                       </Link>
+                      {canPause && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => {
+                            setActiveRunId(run.id);
+                            pauseRun.mutate(run.id, { onSettled: () => setActiveRunId(null) });
+                          }}
+                          disabled={isThisPausing}
+                        >
+                          {isThisPausing ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Pause className="h-3.5 w-3.5" />
+                          )}
+                          Pause
+                        </Button>
+                      )}
                       {canResume && (
                         <Button
                           variant="default"
                           size="sm"
                           className="gap-1.5"
-                          onClick={() => resumeRun.mutate(run.id)}
-                          disabled={resumeRun.isPending}
+                          onClick={() => {
+                            setActiveRunId(run.id);
+                            resumeRun.mutate(run.id, { onSettled: () => setActiveRunId(null) });
+                          }}
+                          disabled={isThisResuming}
                         >
-                          {resumeRun.isPending ? (
+                          {isThisResuming ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <Play className="h-3.5 w-3.5" />
