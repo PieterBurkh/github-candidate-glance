@@ -234,7 +234,7 @@ export default function LeadDetailPage() {
 
               <div className="text-center space-y-2">
                 <p className="text-3xl font-bold text-foreground">
-                  {(person.overall_score * 100).toFixed(0)}%
+                  {Math.round(person.overall_score)}%
                 </p>
                 <p className="text-xs text-muted-foreground">Overall</p>
                 <Select
