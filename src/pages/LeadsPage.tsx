@@ -256,7 +256,7 @@ export default function LeadsPage() {
                           {locCategory}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-xs">
+                      <TableCell className="text-xs" onClick={(e) => e.stopPropagation()}>
                         {prof?.email ? (
                           <a href={`mailto:${prof.email}`} className="text-muted-foreground hover:text-primary flex items-center gap-1">
                             <Mail className="h-3 w-3" />
