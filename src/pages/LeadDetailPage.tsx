@@ -124,6 +124,9 @@ export default function LeadDetailPage() {
                   {p.location && (
                     <span className="flex items-center gap-1">
                       <MapPin className="h-3 w-3" /> {p.location}
+                      <Badge variant="outline" className="text-[10px] ml-1">
+                        {categorizeLocation(p.location)}
+                      </Badge>
                     </span>
                   )}
                   {p.company && (
@@ -131,6 +134,19 @@ export default function LeadDetailPage() {
                       <Building className="h-3 w-3" /> {p.company}
                     </span>
                   )}
+                  {(() => {
+                    const li = extractLinkedIn(p);
+                    return li ? (
+                      <a
+                        href={li}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 hover:text-primary"
+                      >
+                        <Linkedin className="h-3 w-3" /> LinkedIn
+                      </a>
+                    ) : null;
+                  })()}
                   {p.blog && (
                     <a
                       href={p.blog.startsWith("http") ? p.blog : `https://${p.blog}`}
@@ -142,9 +158,9 @@ export default function LeadDetailPage() {
                     </a>
                   )}
                   {p.email && (
-                    <span className="flex items-center gap-1">
+                    <a href={`mailto:${p.email}`} className="flex items-center gap-1 hover:text-primary">
                       <Mail className="h-3 w-3" /> {p.email}
-                    </span>
+                    </a>
                   )}
                 </div>
 
