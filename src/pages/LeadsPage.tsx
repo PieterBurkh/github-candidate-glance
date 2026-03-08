@@ -42,7 +42,7 @@ export default function LeadsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
-  const [sortBy, setSortBy] = useState<"score" | "enriched">("enriched");
+  
   const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
   const updateReview = useUpdateReviewStatus();
@@ -59,11 +59,9 @@ export default function LeadsPage() {
   });
 
   const sorted = [...enrichedOnly].sort((a, b) => {
-    if (sortBy === "enriched") {
-      const eA = enrichmentMap[a.login]?.overall_score ?? -1;
-      const eB = enrichmentMap[b.login]?.overall_score ?? -1;
-      if (eA !== eB) return eB - eA;
-    }
+    const eA = enrichmentMap[a.login]?.overall_score ?? -1;
+    const eB = enrichmentMap[b.login]?.overall_score ?? -1;
+    if (eA !== eB) return eB - eA;
     return b.pre_score - a.pre_score;
   });
 
@@ -156,15 +154,7 @@ export default function LeadsPage() {
                 <SelectItem value="N/A">N/A</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score">Sort by Pre-score</SelectItem>
-                <SelectItem value="enriched">Sort by Score</SelectItem>
-              </SelectContent>
-            </Select>
+            
             <Button variant="outline" size="sm" onClick={downloadCsv} disabled={sorted.length === 0}>
               <Download className="h-4 w-4 mr-1.5" />
               CSV
@@ -181,15 +171,11 @@ export default function LeadsPage() {
                 <TableRow>
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Candidate</TableHead>
-                  <TableHead className="w-20 text-right">Pre-score</TableHead>
-                  
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
                   <TableHead className="w-20">Email</TableHead>
                   
                   <TableHead className="w-20 text-right">Followers</TableHead>
-                  <TableHead className="w-20 text-right">Repos</TableHead>
-                  <TableHead className="w-24 text-right">Score</TableHead>
                   <TableHead className="min-w-[280px]">Assessment</TableHead>
                   
                   <TableHead className="w-16" />
@@ -231,7 +217,6 @@ export default function LeadsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell>
                         <Select
                           value={currentReview}
@@ -272,22 +257,6 @@ export default function LeadsPage() {
                           </span>
                         ) : (
                           <span className="text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right text-sm">
-                        {h?.public_repos != null ? (
-                          <span className="text-muted-foreground">{h.public_repos}</span>
-                        ) : (
-                          <span className="text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {enrichment ? (
-                          <span className="font-mono text-sm font-semibold text-foreground">
-                            {enrichment.overall_score}%
-                          </span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">Pending</span>
                         )}
                       </TableCell>
                       <TableCell>
