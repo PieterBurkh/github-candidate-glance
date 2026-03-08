@@ -159,7 +159,7 @@ export function useDynamicLonglist(tierFilter?: string) {
       const query = supabase
         .from("longlist_candidates")
         .select("*")
-        .eq("stage", "scored")
+        .not("stage", "eq", "discarded")
         .gt("pre_score", 0)
         .order("pre_score", { ascending: false });
 
