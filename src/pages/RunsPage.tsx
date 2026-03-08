@@ -13,7 +13,7 @@ import {
   Pause,
   AlertTriangle,
 } from "lucide-react";
-import { useRuns, useStartRun, useRunEnrichment, useResumeRun } from "@/hooks/useSignalPipeline";
+import { useRuns, useStartRun, useRunEnrichment, useResumeRun, usePauseRun } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ const ALL_NETS = [
 const statusConfig: Record<string, { icon: typeof Clock; className: string; label: string }> = {
   pending: { icon: Clock, className: "text-muted-foreground", label: "Pending" },
   running: { icon: Loader2, className: "text-primary animate-spin", label: "Running" },
+  pausing: { icon: Loader2, className: "text-amber-600 animate-spin", label: "Pausing…" },
   paused: { icon: Pause, className: "text-amber-600", label: "Paused" },
   timed_out: { icon: Clock, className: "text-amber-600", label: "Timed Out" },
   completed: { icon: CheckCircle2, className: "text-green-600", label: "Completed" },
@@ -48,7 +49,9 @@ export default function RunsPage() {
   const startRun = useStartRun();
   const runEnrichment = useRunEnrichment();
   const resumeRun = useResumeRun();
+  const pauseRun = usePauseRun();
   const [showForm, setShowForm] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(100);
   const [maxPages, setMaxPages] = useState(10);
   const [selectedNets, setSelectedNets] = useState<string[]>(ALL_NETS.map((n) => n.id));
@@ -166,7 +169,10 @@ export default function RunsPage() {
               const config = statusConfig[effectiveStatus] || statusConfig.pending;
               const StatusIcon = config.icon;
               const nets = (run.search_params as any)?.nets as string[] | undefined;
-              const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
+               const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
+              const canPause = run.status === "running";
+              const isThisResuming = activeRunId === run.id && resumeRun.isPending;
+              const isThisPausing = activeRunId === run.id && pauseRun.isPending;
               return (
                 <Card key={run.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center justify-between">
@@ -214,15 +220,37 @@ export default function RunsPage() {
                           Initial list
                         </Button>
                       </Link>
+                      {canPause && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5"
+                          onClick={() => {
+                            setActiveRunId(run.id);
+                            pauseRun.mutate(run.id, { onSettled: () => setActiveRunId(null) });
+                          }}
+                          disabled={isThisPausing}
+                        >
+                          {isThisPausing ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Pause className="h-3.5 w-3.5" />
+                          )}
+                          Pause
+                        </Button>
+                      )}
                       {canResume && (
                         <Button
                           variant="default"
                           size="sm"
                           className="gap-1.5"
-                          onClick={() => resumeRun.mutate(run.id)}
-                          disabled={resumeRun.isPending}
+                          onClick={() => {
+                            setActiveRunId(run.id);
+                            resumeRun.mutate(run.id, { onSettled: () => setActiveRunId(null) });
+                          }}
+                          disabled={isThisResuming}
                         >
-                          {resumeRun.isPending ? (
+                          {isThisResuming ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
                             <Play className="h-3.5 w-3.5" />

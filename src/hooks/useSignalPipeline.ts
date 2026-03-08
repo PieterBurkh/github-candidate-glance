@@ -139,6 +139,20 @@ export function useResumeRun() {
   });
 }
 
+export function usePauseRun() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (runId: string) => {
+      const { error } = await supabase
+        .from("runs")
+        .update({ status: "pausing", updated_at: new Date().toISOString() })
+        .eq("id", runId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["runs"] }),
+  });
+}
+
 export function useRunEnrichment() {
   const qc = useQueryClient();
   return useMutation({
