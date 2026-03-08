@@ -157,16 +157,6 @@ export default function LeadsPage() {
                 <SelectItem value="pending">Pending</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={tierFilter || "all"} onValueChange={(v) => setTierFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="All tiers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tiers</SelectItem>
-                <SelectItem value="exploit">Exploit</SelectItem>
-                <SelectItem value="explore">Explore</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={locationFilter || "all"} onValueChange={(v) => setLocationFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All locations" />
