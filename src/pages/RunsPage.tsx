@@ -139,11 +139,13 @@ export function RunsContent() {
         <div className="space-y-3">
           {runs.map((run) => {
             const isLegacyTimedOut = run.status === "completed" && (run.search_params as any)?.timed_out === true;
+            const phase = (run.search_params as any)?.phase as string | undefined;
+            const isAutoContinuing = run.status === "running" && phase === "auto_continuing";
             const effectiveStatus = isLegacyTimedOut ? "timed_out" : run.status;
             const config = statusConfig[effectiveStatus] || statusConfig.pending;
             const StatusIcon = config.icon;
             const nets = (run.search_params as any)?.nets as string[] | undefined;
-             const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
+            const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
             const canPause = run.status === "running";
             const isThisResuming = activeRunId === run.id && resumeRun.isPending;
             const isThisPausing = activeRunId === run.id && pauseRun.isPending;
@@ -171,9 +173,20 @@ export function RunsContent() {
                             Incomplete — resume to finish
                           </Badge>
                         )}
-                        {effectiveStatus === "paused" && (
+                        {effectiveStatus === "paused" && phase !== "user_paused" && (
                           <Badge variant="secondary" className="text-[10px] text-amber-600">
                             Partial — resume to continue
+                          </Badge>
+                        )}
+                        {phase === "user_paused" && (
+                          <Badge variant="secondary" className="text-[10px] text-amber-600">
+                            Paused by you — resume to continue
+                          </Badge>
+                        )}
+                        {isAutoContinuing && (
+                          <Badge variant="secondary" className="text-[10px] text-primary gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Auto-continuing…
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground">
