@@ -4,7 +4,6 @@ import { FileText, Search, Users, ListFilter, BookOpen } from "lucide-react";
 
 const links = [
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
-  { to: "/longlist-results", label: "Longlist", icon: Users },
   { to: "/sourcing", label: "Sourcing", icon: Search },
   { to: "/approach", label: "Sourcing Methodology", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
