@@ -402,12 +402,12 @@ serve(async (req) => {
     if (existingPerson) {
       personId = existingPerson.id;
       await supabase.from("people").update({
-        profile: profileData, overall_score: overallPct, shortlist_status: shortlistStatus,
+        profile: profileData, overall_score: overallPct,
         updated_at: new Date().toISOString(),
       }).eq("id", personId);
     } else {
       const { data: newPerson, error: personErr } = await supabase.from("people").insert({
-        login, profile: profileData, overall_score: overallPct, shortlist_status: shortlistStatus,
+        login, profile: profileData, overall_score: overallPct,
       }).select("id").single();
       if (personErr) throw new Error(`Person insert failed: ${personErr.message}`);
       personId = newPerson.id;
