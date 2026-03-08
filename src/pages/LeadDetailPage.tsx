@@ -66,7 +66,7 @@ export default function LeadDetailPage() {
 
     const headers: string[] = [
       "login", "name", "email", "location", "location_category", "company", "blog",
-      "followers", "public_repos", "overall_score", "shortlist_status", "review_status",
+      "followers", "public_repos", "overall_score",
       "assessment", "outreach_draft",
       ...MUST_HAVE_KEYS.flatMap(k => [`mh_${k}_score`, `mh_${k}_evidence`]),
       ...NICE_TO_HAVE_KEYS.flatMap(k => [`nth_${k}_score`, `nth_${k}_evidence`]),
