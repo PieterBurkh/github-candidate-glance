@@ -135,80 +135,39 @@ export function RunsContent() {
             const config = statusConfig[effectiveStatus] || statusConfig.pending;
             const StatusIcon = config.icon;
             const nets = (run.search_params as any)?.nets as string[] | undefined;
-            const canResume = effectiveStatus === "paused" || isLegacyTimedOut;
-            const isThisResuming = activeRunId === run.id && resumeRun.isPending;
             return (
               <Card key={run.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <StatusIcon className={`h-5 w-5 ${config.className}`} />
-                    <div>
-                      <p className="font-medium text-sm text-foreground">
-                        {new Date(run.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <Badge variant="outline" className="text-[10px]">
-                          {config.label}
+                <CardContent className="p-4 flex items-center gap-4">
+                  <StatusIcon className={`h-5 w-5 ${config.className}`} />
+                  <div>
+                    <p className="font-medium text-sm text-foreground">
+                      {new Date(run.created_at).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <Badge variant="outline" className="text-[10px]">
+                        {config.label}
+                      </Badge>
+                      {isAutoContinuing && (
+                        <Badge variant="secondary" className="text-[10px] text-primary gap-1">
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Auto-continuing…
                         </Badge>
-                        {isLegacyTimedOut && (
-                          <Badge variant="secondary" className="text-[10px] text-amber-600 gap-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            Incomplete — resume to finish
-                          </Badge>
-                        )}
-                        {effectiveStatus === "paused" && phase !== "user_paused" && (
-                          <Badge variant="secondary" className="text-[10px] text-amber-600">
-                            Partial — resume to continue
-                          </Badge>
-                        )}
-                        {phase === "user_paused" && (
-                          <Badge variant="secondary" className="text-[10px] text-amber-600">
-                            Paused by you — resume to continue
-                          </Badge>
-                        )}
-                        {isAutoContinuing && (
-                          <Badge variant="secondary" className="text-[10px] text-primary gap-1">
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            Auto-continuing…
-                          </Badge>
-                        )}
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {(run.search_params as any)?.repos_found ?? run.repo_count ?? 0} repos
+                      </span>
+                      {nets && (
                         <span className="text-xs text-muted-foreground">
-                          {(run.search_params as any)?.repos_found ?? run.repo_count ?? 0} repos
+                          {nets.length} nets
                         </span>
-                        {nets && (
-                          <span className="text-xs text-muted-foreground">
-                            {nets.length} nets
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                  {canResume && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="gap-1.5"
-                        onClick={() => {
-                          setActiveRunId(run.id);
-                          resumeRun.mutate(run.id, { onSettled: () => setActiveRunId(null) });
-                        }}
-                        disabled={isThisResuming}
-                      >
-                        {isThisResuming ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Play className="h-3.5 w-3.5" />
-                        )}
-                        Resume
-                      </Button>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             );
