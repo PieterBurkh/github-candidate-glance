@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ExternalLink, Users, Star, Download, Mail } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
