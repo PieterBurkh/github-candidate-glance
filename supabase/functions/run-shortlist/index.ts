@@ -153,10 +153,9 @@ async function processShortlist(shortlistRunId: string) {
 
   if (remainingCount <= 0 && !rateLimited) {
     // Done
-    const stats = await getStats(sb);
     await sb.from("shortlist_runs").update({
       status: "done",
-      progress: { ...stats, total: totalCandidates },
+      progress: { total: totalCandidates, enriched: processedLogins.size + enriched },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
     console.log(`Shortlist run ${shortlistRunId} done`);
