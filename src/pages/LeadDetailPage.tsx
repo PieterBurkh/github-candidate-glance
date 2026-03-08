@@ -150,6 +150,14 @@ export default function LeadDetailPage() {
           );
         })()}
 
+        {/* Outreach Draft */}
+        {(() => {
+          const rubric = evidence?.find(ev => ev.criterion === "shortlist_rubric");
+          const outreach = rubric ? (rubric.evidence as any)?.outreach_draft : null;
+          if (!outreach) return null;
+          return <OutreachCard text={outreach} />;
+        })()}
+
         {/* Rubric Breakdown */}
         {(() => {
           const rubric = evidence?.find(ev => ev.criterion === "shortlist_rubric");
