@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { shortlistRunId } = await req.json();
+    const { shortlistRunId, longlistRunId } = await req.json();
     if (!shortlistRunId) throw new Error("shortlistRunId required");
 
     EdgeRuntime.waitUntil(
