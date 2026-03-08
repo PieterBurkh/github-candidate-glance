@@ -34,7 +34,7 @@ export function LonglistApproachContent() {
               process <strong className="text-foreground">16,000+ unique candidates</strong> in a single pass.
             </p>
             <p>
-              The pipeline runs in 4 stages: Seeding, Hydration, Scoring, and Selection.
+              The pipeline runs in 3 stages: Seeding, Hydration, and Scoring.
             </p>
           </CardContent>
         </Card>
@@ -106,9 +106,8 @@ export function LonglistApproachContent() {
               how much data was available to compute the score. Low confidence means sparse metadata.
             </p>
             <p>
-              Candidates scoring <strong className="text-foreground">≥ 80</strong> are immediately assigned
-              the <Badge variant="secondary" className="text-xs">exploit</Badge> tier — they're strong enough
-              to fast-track without waiting for global selection.
+              Candidates with a <strong className="text-foreground">pre_score between 70 and 82</strong> are
+              selected for the Longlist. This is a pure score threshold — no tiers, no quotas.
             </p>
           </CardContent>
         </Card>
@@ -139,35 +138,21 @@ export function LonglistApproachContent() {
           </CardContent>
         </Card>
 
-        {/* Stage 4 */}
+        {/* Selection */}
         <Card>
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-xs">Stage 4</Badge>
-              <CardTitle className="text-lg">Global Selection</CardTitle>
-            </div>
+            <CardTitle className="text-lg">Selection</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              This stage triggers <strong className="text-foreground">only after every unique login</strong> across
-              all Initial List runs has been processed. It fills two fixed quotas:
+              Selection is <strong className="text-foreground">purely score-based</strong> and runs idempotently
+              after scoring completes. Any candidate whose <code className="bg-muted px-1 rounded text-xs">pre_score</code> falls
+              in the <strong className="text-foreground">70–82 range</strong> is selected for the Longlist.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2 mt-2">
-              <div className="rounded-md border border-border p-3">
-               <div className="font-semibold text-foreground text-sm mb-1">400 × Exploit</div>
-                <p className="text-xs">Top scorers by pre_score. These are the highest-signal candidates.</p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <div className="font-semibold text-foreground text-sm mb-1">100 × Explore</div>
-                <p className="text-xs">
-                  Diverse signal candidates with ≥ 2 quality signals but lower overall scores.
-                  Ensures we don't miss unconventional profiles.
-                </p>
-              </div>
-            </div>
             <p>
-              All remaining candidates are marked as <strong className="text-foreground">discarded</strong>.
-              The selected 500 candidates form the final Longlist.
+              Candidates below 70 lack enough signal. Candidates above 82 are rare outliers that often
+              indicate bot accounts or organisation profiles with inflated metrics. All non-selected
+              candidates are marked as <strong className="text-foreground">discarded</strong>.
             </p>
           </CardContent>
         </Card>

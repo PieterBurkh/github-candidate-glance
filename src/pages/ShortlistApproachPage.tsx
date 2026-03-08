@@ -3,12 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const MUST_HAVES = [
-  { criterion: "React + TypeScript + modern HTML/CSS", strong: "Production React app with strict TS, semantic HTML, CSS modules or Tailwind", weak: "Tutorial-style todo app with any types" },
-  { criterion: "Architecting rich apps with complex interactions", strong: "State machines, optimistic updates, complex forms, drag-and-drop", weak: "Simple CRUD with basic useState" },
-  { criterion: "Documentation + versioning for external audiences", strong: "Versioned README, CHANGELOG, API docs, migration guides", weak: "Auto-generated docs only, no changelog" },
-  { criterion: "Performance profiling / debugging", strong: "Lighthouse configs, bundle analysis, React.memo usage with comments, lazy loading", weak: "No evidence of performance consideration" },
-  { criterion: "Technical leadership + standards mediation", strong: "RFC/ADR documents, PR reviews with architectural feedback, ESLint/Prettier configs", weak: "Solo contributor, no evidence of team standards" },
-  { criterion: "English communication + async comfort", strong: "Clear PR descriptions, issue discussions, README prose in fluent English", weak: "Minimal or non-English communication" },
+  { criterion: "React + TypeScript + modern HTML/CSS", weight: 2.0, strong: "Production React app with strict TS, semantic HTML, CSS modules or Tailwind", weak: "Tutorial-style todo app with any types" },
+  { criterion: "Architecting rich apps with complex interactions", weight: 2.0, strong: "State machines, optimistic updates, complex forms, drag-and-drop", weak: "Simple CRUD with basic useState" },
+  { criterion: "Performance profiling / debugging", weight: 1.5, strong: "Lighthouse configs, bundle analysis, React.memo usage with comments, lazy loading", weak: "No evidence of performance consideration" },
+  { criterion: "Documentation + versioning for external audiences", weight: 1.0, strong: "Versioned README, CHANGELOG, API docs, migration guides", weak: "Auto-generated docs only, no changelog" },
 ];
 
 const NICE_TO_HAVES = [
@@ -36,8 +34,9 @@ export function ShortlistApproachContent() {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
               The Shortlist pipeline is a <strong className="text-foreground">person-centric LLM evaluation</strong> of
-              exploit/explore candidates from the Longlist. Unlike the deterministic Longlist scoring, this stage
-              uses <strong className="text-foreground">Gemini</strong> to assess each candidate against a 12-criterion rubric.
+              candidates scoring 70–82 from the Longlist. Unlike the deterministic Longlist scoring, this stage
+              uses <strong className="text-foreground">Gemini</strong> to assess each candidate against a 10-criterion rubric
+              (4 weighted must-haves + 6 nice-to-haves).
             </p>
             <p>
               We don't send full codebases. Instead, we assemble compact <strong className="text-foreground">evidence packs</strong> from
@@ -59,10 +58,9 @@ export function ShortlistApproachContent() {
               For each candidate, we select up to <strong className="text-foreground">4 representative repos</strong> using these rules:
             </p>
             <ul className="list-disc list-inside space-y-1 ml-2">
-              <li><strong className="text-foreground">Pinned repos</strong> — profile-pinned or top-starred owned repos</li>
-              <li><strong className="text-foreground">Most recently pushed</strong> — activity signal</li>
-              <li><strong className="text-foreground">Most maintained</strong> — has releases + CI + tests</li>
-              <li><strong className="text-foreground">Contributed repo</strong> — PR in an org repo (if available)</li>
+              <li><strong className="text-foreground">Top 2 by stars</strong> — popularity signal from owned repos</li>
+              <li><strong className="text-foreground">Top 2 by most recent push</strong> — activity signal</li>
+              <li>Remaining slots filled from other repos, deduplicated</li>
             </ul>
             <p className="mt-3">Per repo, we collect these artifacts (compact, not full source):</p>
             <div className="grid gap-2 mt-2">
@@ -73,7 +71,6 @@ export function ShortlistApproachContent() {
                 { artifact: "CHANGELOG.md", detail: "Header + last 2 release entries" },
                 { artifact: "Presence flags", detail: "Boolean: .storybook/, .github/workflows/, test dirs" },
                 { artifact: "Releases/tags", detail: "Semver count + last release date" },
-                { artifact: "PR/issue samples", detail: "Max 3 threads with keywords (perf, RFC, ADR, migration, lighthouse)" },
               ].map((a) => (
                 <div key={a.artifact} className="flex items-start gap-3 rounded-md border border-border px-3 py-2">
                   <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono whitespace-nowrap">{a.artifact}</code>
@@ -94,8 +91,8 @@ export function ShortlistApproachContent() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              A single <strong className="text-foreground">Gemini call per candidate</strong> evaluates all 12 criteria
-              using a structured tool_call response. Each sub-criterion is scored on a 5-point scale:
+              A single <strong className="text-foreground">Gemini call per candidate</strong> evaluates all 10 criteria
+              using a structured tool_call response. Each criterion is scored on a 5-point scale:
             </p>
             <div className="grid grid-cols-5 gap-2 mt-2">
               {[
@@ -119,14 +116,17 @@ export function ShortlistApproachContent() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Badge className="text-xs">80% weight</Badge>
-              <CardTitle className="text-lg">Must-haves (6 criteria)</CardTitle>
+              <CardTitle className="text-lg">Must-haves (4 criteria)</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {MUST_HAVES.map((m, i) => (
                 <div key={i} className="rounded-md border border-border p-3">
-                  <div className="font-medium text-sm text-foreground mb-1.5">{i + 1}. {m.criterion}</div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-medium text-sm text-foreground">{i + 1}. {m.criterion}</span>
+                    <Badge variant="secondary" className="text-[9px] font-mono shrink-0">×{m.weight}</Badge>
+                  </div>
                   <div className="grid sm:grid-cols-2 gap-2 text-xs">
                     <div className="flex gap-1.5">
                       <Badge variant="default" className="text-[9px] shrink-0">Strong</Badge>
@@ -178,23 +178,16 @@ export function ShortlistApproachContent() {
             <CardTitle className="text-lg">Scoring Formula &amp; Decision Rules</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <div className="rounded-md bg-muted p-4 font-mono text-xs">
-              overall_pct = round(100 × (0.80 × must_haves_avg + 0.20 × nice_haves_avg))
+            <div className="rounded-md bg-muted p-4 font-mono text-xs space-y-1">
+              <div>must_haves_weighted = (react_ts×2.0 + architecture×2.0 + perf×1.5 + docs×1.0) / 6.5</div>
+              <div>nice_haves_avg = simple average of 6 nice-to-have scores</div>
+              <div>overall_pct = round(100 × (0.80 × must_haves_weighted + 0.20 × nice_haves_avg))</div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 mt-3">
-              <div className="rounded-md border border-border p-3">
-                <Badge className="text-[10px] mb-1.5">SHORTLIST</Badge>
-                <p className="text-xs">overall_pct ≥ 65 AND must_haves_avg ≥ 0.60</p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <Badge variant="secondary" className="text-[10px] mb-1.5">NEEDS REVIEW</Badge>
-                <p className="text-xs">overall_pct ≥ 65 AND must_haves_avg &lt; 0.60</p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <Badge variant="outline" className="text-[10px] mb-1.5">NO</Badge>
-                <p className="text-xs">overall_pct &lt; 65</p>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              The resulting <code className="bg-muted px-1 rounded text-xs">overall_pct</code> is stored as the candidate's
+              final score. Higher scores indicate stronger alignment with the rubric. No automated accept/reject
+              thresholds are applied — the score and per-criterion evidence are provided for manual review.
+            </p>
           </CardContent>
         </Card>
 
