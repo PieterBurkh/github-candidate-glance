@@ -49,7 +49,7 @@ export default function LonglistResultsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Longlist</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {sorted.length} candidates that survived deterministic filtering
+              Top {sorted.length} candidates (400 exploit + 100 explore)
             </p>
           </div>
           <div className="flex items-center gap-3">
