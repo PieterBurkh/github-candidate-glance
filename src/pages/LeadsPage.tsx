@@ -189,11 +189,8 @@ export default function LeadsPage() {
                   <TableHead>Candidate</TableHead>
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
-                  <TableHead className="w-20">Email</TableHead>
-                  
-                  <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Score</TableHead>
-                  <TableHead className="min-w-[280px]">Assessment</TableHead>
+                  <TableHead>Assessment</TableHead>
                   
                   <TableHead className="w-16" />
                 </TableRow>
