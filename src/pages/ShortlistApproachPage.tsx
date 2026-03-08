@@ -34,8 +34,9 @@ export function ShortlistApproachContent() {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
               The Shortlist pipeline is a <strong className="text-foreground">person-centric LLM evaluation</strong> of
-              exploit/explore candidates from the Longlist. Unlike the deterministic Longlist scoring, this stage
-              uses <strong className="text-foreground">Gemini</strong> to assess each candidate against a 12-criterion rubric.
+              candidates scoring 70–82 from the Longlist. Unlike the deterministic Longlist scoring, this stage
+              uses <strong className="text-foreground">Gemini</strong> to assess each candidate against a 10-criterion rubric
+              (4 weighted must-haves + 6 nice-to-haves).
             </p>
             <p>
               We don't send full codebases. Instead, we assemble compact <strong className="text-foreground">evidence packs</strong> from
