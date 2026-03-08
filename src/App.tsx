@@ -24,7 +24,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/sourcing" replace />} />
+          <Route path="/" element={<Navigate to="/start" replace />} />
+          <Route path="/start" element={<StartHerePage />} />
           <Route path="/sourcing" element={<SourcingPage />} />
           <Route path="/longlist" element={<GlobalLonglistPage />} />
           <Route path="/longlist-results" element={<LonglistResultsPage />} />

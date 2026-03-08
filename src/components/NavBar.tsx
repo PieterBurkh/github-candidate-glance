@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { FileText, Search, Users, ListFilter, BookOpen } from "lucide-react";
+import { FileText, Search, ListFilter, BookOpen, Home } from "lucide-react";
 
 const links = [
+  { to: "/start", label: "Start Here", icon: Home },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
   { to: "/sourcing", label: "Sourcing", icon: Search },
   { to: "/approach", label: "Sourcing Methodology", icon: BookOpen },
