@@ -4,11 +4,9 @@ import { FileText, Search, Users, List, ListFilter, BookOpen, Filter } from "luc
 
 const links = [
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
-  { to: "/shortlist-runs", label: "Shortlist runs", icon: Filter },
   { to: "/longlist-results", label: "Longlist", icon: Users },
-  { to: "/longlist-runs", label: "Longlist runs", icon: Filter },
   { to: "/longlist", label: "Initial list", icon: List },
-  { to: "/", label: "Initial list runs", icon: Search },
+  { to: "/sourcing", label: "Sourcing", icon: Search },
   { to: "/approach", label: "Initial list approach", icon: BookOpen },
   { to: "/longlist-approach", label: "Longlist approach", icon: BookOpen },
   { to: "/shortlist-approach", label: "Shortlist approach", icon: BookOpen },
