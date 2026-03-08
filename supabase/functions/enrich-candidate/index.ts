@@ -250,7 +250,8 @@ ${evidenceBlock}`;
   }
   toolProperties.summary = { type: "string", description: "1-2 sentence overall assessment" };
   toolProperties.assessment = { type: "string", description: "2-3 sentences explaining why you gave this overall score — what stood out (good or bad) in the candidate's repos, citing specific repositories or patterns observed." };
-  toolRequired.push("summary", "assessment");
+  toolProperties.outreach_draft = { type: "string", description: "Write a personalized 2-3 sentence outreach message to this candidate. Use their first name if available. Reference 1-2 specific repos or technical skills you found impressive from the evidence. End with: 'At Hash, we're building an open-source platform that helps organizations integrate information into knowledge graphs — solving information failure so everyone can make better decisions. Would you be interested in discussing our Frontend Engineer position?'" };
+  toolRequired.push("summary", "assessment", "outreach_draft");
 
   const response = await fetch(AI_GATEWAY_URL, {
     method: "POST",
@@ -456,6 +457,7 @@ serve(async (req) => {
       overall_pct: overallPct,
       summary: scores.summary || "",
       assessment: scores.assessment || "",
+      outreach_draft: scores.outreach_draft || "",
       repos_evaluated: repoEvidences.map(r => r.full_name),
     };
 
