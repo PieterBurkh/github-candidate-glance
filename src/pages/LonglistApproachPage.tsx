@@ -133,7 +133,7 @@ export function LonglistApproachContent() {
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Scores are capped at 100. The theoretical maximum with all signals is ~97. Tiered criteria (e.g. stars, followers) award the higher value only — they don't stack.
+              Scores are capped at 82. Tiered criteria (e.g. stars, followers) award the higher value only — they don't stack.
             </p>
           </CardContent>
         </Card>
