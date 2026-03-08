@@ -112,6 +112,7 @@ export type Database = {
           login: string
           overall_score: number
           profile: Json
+          review_status: string
           shortlist_status: string | null
           updated_at: string
         }
@@ -121,6 +122,7 @@ export type Database = {
           login: string
           overall_score?: number
           profile?: Json
+          review_status?: string
           shortlist_status?: string | null
           updated_at?: string
         }
@@ -130,6 +132,7 @@ export type Database = {
           login?: string
           overall_score?: number
           profile?: Json
+          review_status?: string
           shortlist_status?: string | null
           updated_at?: string
         }

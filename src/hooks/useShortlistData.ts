@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 const PAGE_SIZE = 1000;
@@ -21,6 +21,7 @@ async function fetchAllRows<T>(
 interface EnrichmentEntry {
   overall_score: number;
   shortlist_status: string;
+  review_status: string;
   evidence: any[];
 }
 
@@ -55,6 +56,7 @@ export function useShortlistEnrichment() {
         map[p.login] = {
           overall_score: p.overall_score,
           shortlist_status: p.shortlist_status || "pending",
+          review_status: p.review_status || "pending",
           evidence: evidenceByPerson.get(p.id) || [],
         };
       }
@@ -67,4 +69,20 @@ export function useShortlistEnrichment() {
     enrichmentMap: query.data || ({} as Record<string, EnrichmentEntry>),
     isLoading: query.isLoading,
   };
+}
+
+export function useUpdateReviewStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ login, status }: { login: string; status: string }) => {
+      const { error } = await supabase
+        .from("people")
+        .update({ review_status: status } as any)
+        .eq("login", login);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shortlist-enrichment"] });
+    },
+  });
 }
