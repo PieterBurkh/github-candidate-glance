@@ -301,7 +301,7 @@ export default function LeadsPage() {
                           <span className="text-xs text-muted-foreground">–</span>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         {h?.html_url && (
                           <Button variant="ghost" size="icon" asChild className="h-7 w-7">
                             <a href={h.html_url} target="_blank" rel="noopener noreferrer">
