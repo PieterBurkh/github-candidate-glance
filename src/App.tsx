@@ -11,6 +11,7 @@ import LonglistPage from "./pages/LonglistPage";
 import GlobalLonglistPage from "./pages/GlobalLonglistPage";
 import LonglistResultsPage from "./pages/LonglistResultsPage";
 import ApproachOverviewPage from "./pages/ApproachOverviewPage";
+import StartHerePage from "./pages/StartHerePage";
 
 import NotFound from "./pages/NotFound";
 
@@ -23,7 +24,8 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/sourcing" replace />} />
+          <Route path="/" element={<Navigate to="/start" replace />} />
+          <Route path="/start" element={<StartHerePage />} />
           <Route path="/sourcing" element={<SourcingPage />} />
           <Route path="/longlist" element={<GlobalLonglistPage />} />
           <Route path="/longlist-results" element={<LonglistResultsPage />} />
