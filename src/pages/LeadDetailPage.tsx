@@ -19,6 +19,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { NavBar } from "@/components/NavBar";
 import { RubricBreakdown } from "@/components/RubricBreakdown";
 
+function OutreachCard({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <Card className="mb-6">
+      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+        <CardTitle className="text-base">Outreach Draft</CardTitle>
+        <Button variant="ghost" size="sm" className="gap-1.5 h-7 text-xs" onClick={handleCopy}>
+          {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+          {copied ? "Copied" : "Copy"}
+        </Button>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{text}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function LeadDetailPage() {
   const { login } = useParams<{ login: string }>();
   const { data: person, isLoading } = usePersonDetail(login || "");
