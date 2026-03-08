@@ -35,7 +35,6 @@ export function useStartShortlistRun() {
         .single();
       if (insertErr) throw insertErr;
 
-      // Edge function will be built later — for now just create the record
       try {
         const { data, error } = await supabase.functions.invoke("run-shortlist", {
           body: { shortlistRunId: run.id },
@@ -44,7 +43,6 @@ export function useStartShortlistRun() {
         if (data?.error) throw new Error(data.error);
         return { runId: run.id, ...data };
       } catch (e) {
-        // Edge function not yet deployed — run record still created
         console.warn("run-shortlist edge function not available yet:", e);
         return { runId: run.id };
       }
@@ -62,21 +60,6 @@ export function usePauseShortlistRun() {
         .update({ status: "paused", updated_at: new Date().toISOString() })
         .eq("id", shortlistRunId);
       if (error) throw error;
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["shortlist-runs"] }),
-  });
-}
-
-export function useResumeShortlistRun() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: async (shortlistRunId: string) => {
-      const { data, error } = await supabase.functions.invoke("run-shortlist", {
-        body: { shortlistRunId },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-      return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["shortlist-runs"] }),
   });

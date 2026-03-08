@@ -18,7 +18,7 @@ function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
-async function processShortlist(shortlistRunId: string, longlistRunId?: string) {
+async function processShortlist(shortlistRunId: string) {
   const startTime = Date.now();
   function timedOut() { return (Date.now() - startTime) > (DEADLINE_MS - 10000); }
 
@@ -28,26 +28,21 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
     status: "running", updated_at: new Date().toISOString(),
   }).eq("id", shortlistRunId);
 
-  // Fetch high-scoring candidates that haven't been shortlist-enriched yet
-  // A candidate is "done" if there's a people record with shortlist_status != 'pending'
-
-  // Step 1: Get all candidates scoring 70+ ordered by score desc (paginated)
+  // Get all candidates scoring 70+ ordered by score desc
   const allCandidates: { login: string; pre_score: number }[] = [];
   let from = 0;
   while (true) {
-    let query = sb.from("longlist_candidates")
+    const { data: page } = await sb.from("longlist_candidates")
       .select("login, pre_score")
       .gte("pre_score", 70)
-      .order("pre_score", { ascending: false });
-    if (longlistRunId) {
-      query = query.eq("longlist_run_id", longlistRunId);
-    }
-    const { data: page } = await query.range(from, from + PAGE_SIZE - 1);
+      .order("pre_score", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1);
     if (!page || page.length === 0) break;
     allCandidates.push(...page);
     if (page.length < PAGE_SIZE) break;
     from += PAGE_SIZE;
   }
+
   // Deduplicate by login, keep highest score
   const seen = new Map<string, number>();
   for (const c of allCandidates) {
@@ -55,15 +50,13 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
       seen.set(c.login, c.pre_score);
     }
   }
-  const uniqueLogins = [...seen.keys()]; // already in score-descending order
+  const uniqueLogins = [...seen.keys()];
 
-  // Step 2: Find which logins already have a people record (already enriched)
+  // Find which logins already have a people record (already enriched)
   const processedLogins = new Set<string>();
   for (let i = 0; i < uniqueLogins.length; i += PAGE_SIZE) {
     const batch = uniqueLogins.slice(i, i + PAGE_SIZE);
-    const { data: done } = await sb.from("people")
-      .select("login")
-      .in("login", batch);
+    const { data: done } = await sb.from("people").select("login").in("login", batch);
     if (done) done.forEach((p: any) => processedLogins.add(p.login));
   }
 
@@ -75,16 +68,17 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
   if (pendingLogins.length === 0) {
     await sb.from("shortlist_runs").update({
       status: "done",
-      progress: { total: totalCandidates, enriched: totalCandidates },
+      progress: { total: totalCandidates, enriched: processedLogins.size, pending: 0 },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
     return;
   }
 
-  // Step 3: Process in batches
+  // Process in batches
   let enriched = 0;
   let failed = 0;
   let rateLimited = false;
+  let paused = false;
   const enrichUrl = `${SUPABASE_URL}/functions/v1/enrich-candidate`;
 
   for (let i = 0; i < pendingLogins.length; i += BATCH_SIZE) {
@@ -93,8 +87,9 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
     // Cooperative pause check
     const { data: runCheck } = await sb.from("shortlist_runs").select("status").eq("id", shortlistRunId).single();
     if (runCheck?.status === "paused") {
-      console.log(`Shortlist run ${shortlistRunId} paused by user. Stopping.`);
-      return;
+      console.log(`Shortlist run ${shortlistRunId} paused by user.`);
+      paused = true;
+      break;
     }
 
     const batch = pendingLogins.slice(i, i + BATCH_SIZE);
@@ -109,10 +104,7 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
           },
           body: JSON.stringify({ login }),
         }).then(async (r) => {
-          if (r.status === 429) {
-            const body = await r.text();
-            throw new Error("GITHUB_RATE_LIMITED");
-          }
+          if (r.status === 429) throw new Error("GITHUB_RATE_LIMITED");
           if (!r.ok) {
             const body = await r.text();
             throw new Error(`${login}: ${r.status} ${body}`);
@@ -140,8 +132,9 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
     }
 
     // Update progress after each batch
+    const remaining = pendingLogins.length - enriched - failed;
     await sb.from("shortlist_runs").update({
-      progress: { total: totalCandidates, enriched: processedLogins.size + enriched, failed },
+      progress: { total: totalCandidates, enriched: processedLogins.size + enriched, failed, pending: remaining },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
 
@@ -151,68 +144,44 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
     }
   }
 
-  // Check if more work remains
-  const remainingCount = pendingLogins.length - enriched - failed;
+  // Build final progress
+  const remaining = pendingLogins.length - enriched - failed;
+  const finalProgress: Record<string, any> = {
+    total: totalCandidates,
+    enriched: processedLogins.size + enriched,
+    enriched_this_run: enriched,
+    failed,
+    pending: remaining,
+  };
 
-  if (remainingCount <= 0 && !rateLimited) {
-    // Done
-    await sb.from("shortlist_runs").update({
-      status: "done",
-      progress: { total: totalCandidates, enriched: processedLogins.size + enriched },
-      updated_at: new Date().toISOString(),
-    }).eq("id", shortlistRunId);
-    console.log(`Shortlist run ${shortlistRunId} done`);
-    return;
-  }
-
-  if (rateLimited && enriched === 0) {
-    // Rate limited with zero progress — pause and store reset info
+  // Add rate limit info if applicable
+  if (rateLimited) {
+    finalProgress.rate_limited = true;
     try {
       const rlHeaders: Record<string, string> = { "User-Agent": "lovable-shortlist" };
       if (GITHUB_TOKEN) rlHeaders.Authorization = `Bearer ${GITHUB_TOKEN}`;
       const rlRaw = await fetch("https://api.github.com/rate_limit", { headers: rlHeaders });
       const rlData = await rlRaw.json();
       const resetAt = rlData?.rate?.reset;
-      const waitMs = resetAt ? (resetAt * 1000 - Date.now()) : 3600_000;
-      const waitMin = Math.ceil(waitMs / 60000);
-
-      await sb.from("shortlist_runs").update({
-        status: "paused",
-        progress: { total: totalCandidates, enriched: processedLogins.size, failed, rate_limited: true, reset_at: resetAt, wait_minutes: waitMin },
-        updated_at: new Date().toISOString(),
-      }).eq("id", shortlistRunId);
-      console.log(`Rate limited. Resets in ${waitMin} min. Pausing ${shortlistRunId}.`);
+      if (resetAt) {
+        finalProgress.reset_at = resetAt;
+        finalProgress.wait_minutes = Math.ceil((resetAt * 1000 - Date.now()) / 60000);
+      }
     } catch (e) {
       console.error("Failed to fetch rate limit info:", e);
-      await sb.from("shortlist_runs").update({
-        status: "paused",
-        progress: { total: totalCandidates, enriched: processedLogins.size, failed, rate_limited: true },
-        updated_at: new Date().toISOString(),
-      }).eq("id", shortlistRunId);
     }
-    return;
   }
 
-  // More work or timed out — self-chain
+  const finalStatus = paused ? "paused" : "done";
+
   await sb.from("shortlist_runs").update({
-    status: "running",
-    progress: { total: totalCandidates, enriched: processedLogins.size + enriched, failed },
+    status: finalStatus,
+    progress: finalProgress,
     updated_at: new Date().toISOString(),
   }).eq("id", shortlistRunId);
 
-  const functionUrl = `${SUPABASE_URL}/functions/v1/run-shortlist`;
-  fetch(functionUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-    },
-    body: JSON.stringify({ shortlistRunId, longlistRunId }),
-  }).catch(err => console.error("Self-chain failed:", err));
-
-  console.log(`Self-chaining shortlist run ${shortlistRunId}...`);
+  console.log(`Shortlist run ${shortlistRunId} finished with status=${finalStatus}, enriched=${enriched}`);
 }
-
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -220,11 +189,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { shortlistRunId, longlistRunId } = await req.json();
+    const { shortlistRunId } = await req.json();
     if (!shortlistRunId) throw new Error("shortlistRunId required");
 
     EdgeRuntime.waitUntil(
-      processShortlist(shortlistRunId, longlistRunId).catch(async (error) => {
+      processShortlist(shortlistRunId).catch(async (error) => {
         console.error(`Shortlist run ${shortlistRunId} failed:`, error);
         const sb = createSb();
         await sb.from("shortlist_runs").update({

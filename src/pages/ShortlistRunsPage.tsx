@@ -1,7 +1,7 @@
 import {
   Play, Loader2, CheckCircle2, Clock, Plus, Pause, XCircle,
 } from "lucide-react";
-import { useShortlistRuns, useStartShortlistRun, useResumeShortlistRun, usePauseShortlistRun } from "@/hooks/useShortlistPipeline";
+import { useShortlistRuns, useStartShortlistRun, usePauseShortlistRun } from "@/hooks/useShortlistPipeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { NavBar } from "@/components/NavBar";
 const statusConfig: Record<string, { icon: typeof Clock; className: string; label: string }> = {
   pending: { icon: Clock, className: "text-muted-foreground", label: "Pending" },
   running: { icon: Loader2, className: "text-primary animate-spin", label: "Running" },
-  paused: { icon: Pause, className: "text-amber-600", label: "Paused" },
+  paused: { icon: Pause, className: "text-amber-600", label: "Stopped" },
   done: { icon: CheckCircle2, className: "text-green-600", label: "Done" },
   failed: { icon: XCircle, className: "text-destructive", label: "Failed" },
 };
@@ -18,7 +18,6 @@ const statusConfig: Record<string, { icon: typeof Clock; className: string; labe
 export function ShortlistRunsContent() {
   const { data: runs, isLoading } = useShortlistRuns();
   const startRun = useStartShortlistRun();
-  const resumeRun = useResumeShortlistRun();
   const pauseRun = usePauseShortlistRun();
 
   return (
@@ -48,7 +47,6 @@ export function ShortlistRunsContent() {
             const config = statusConfig[run.status] || statusConfig.pending;
             const StatusIcon = config.icon;
             const p = run.progress || {};
-            const canResume = run.status === "paused";
             const canPause = run.status === "running";
 
             return (
@@ -64,47 +62,38 @@ export function ShortlistRunsContent() {
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <Badge variant="outline" className="text-[10px]">{config.label}</Badge>
-                        {p.total != null && (
-                          <span className="text-xs text-muted-foreground">{p.total} candidates</span>
+                        {p.enriched_this_run != null && (
+                          <span className="text-xs text-muted-foreground">{p.enriched_this_run} enriched this run</span>
                         )}
                         {p.enriched != null && (
-                          <span className="text-xs text-muted-foreground">{p.enriched} enriched</span>
+                          <span className="text-xs text-muted-foreground">{p.enriched}/{p.total} total</span>
+                        )}
+                        {p.pending != null && p.pending > 0 && (
+                          <span className="text-xs text-muted-foreground">{p.pending} remaining</span>
                         )}
                         {p.failed != null && p.failed > 0 && (
                           <span className="text-xs text-destructive">{p.failed} failed</span>
                         )}
                         {p.rate_limited && (
                           <span className="text-xs text-destructive font-medium">
-                            ⏳ Rate limited — resets {p.reset_at
-                              ? `at ${new Date(p.reset_at * 1000).toLocaleTimeString()}`
-                              : `in ~${p.wait_minutes || "?"} min`}
+                            ⏳ Rate limited{p.reset_at
+                              ? ` — resets at ${new Date(p.reset_at * 1000).toLocaleTimeString()}`
+                              : p.wait_minutes ? ` — resets in ~${p.wait_minutes} min` : ""}
                           </span>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {canPause && (
-                      <Button
-                        variant="outline" size="sm" className="gap-1.5"
-                        onClick={() => pauseRun.mutate(run.id)}
-                        disabled={pauseRun.isPending}
-                      >
-                        {pauseRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />}
-                        Pause
-                      </Button>
-                    )}
-                    {canResume && (
-                      <Button
-                        variant="default" size="sm" className="gap-1.5"
-                        onClick={() => resumeRun.mutate(run.id)}
-                        disabled={resumeRun.isPending}
-                      >
-                        {resumeRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                        Resume
-                      </Button>
-                    )}
-                  </div>
+                  {canPause && (
+                    <Button
+                      variant="outline" size="sm" className="gap-1.5"
+                      onClick={() => pauseRun.mutate(run.id)}
+                      disabled={pauseRun.isPending}
+                    >
+                      {pauseRun.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Pause className="h-3.5 w-3.5" />}
+                      Pause
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             );
