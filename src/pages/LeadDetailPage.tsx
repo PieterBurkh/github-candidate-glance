@@ -8,6 +8,8 @@ import {
   MapPin,
   Building,
   Users,
+  Copy,
+  Check,
 } from "lucide-react";
 import { usePersonDetail, usePersonEvidence } from "@/hooks/useSignalPipeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
