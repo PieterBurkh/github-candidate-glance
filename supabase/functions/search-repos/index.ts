@@ -393,7 +393,7 @@ serve(async (req) => {
                 .select("status")
                 .eq("id", runId)
                 .single();
-              if (statusCheck?.status === "pausing") {
+              if (statusCheck?.status === "paused") {
                 console.log(`Run ${runId} pause requested by user`);
                 timedOut = true;
                 break;

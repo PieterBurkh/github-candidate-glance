@@ -145,7 +145,7 @@ export function usePauseRun() {
     mutationFn: async (runId: string) => {
       const { error } = await supabase
         .from("runs")
-        .update({ status: "pausing", updated_at: new Date().toISOString() })
+        .update({ status: "paused", updated_at: new Date().toISOString() })
         .eq("id", runId);
       if (error) throw error;
     },
