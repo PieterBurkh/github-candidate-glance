@@ -182,7 +182,7 @@ export default function LeadsPage() {
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Candidate</TableHead>
                   <TableHead className="w-20 text-right">Pre-score</TableHead>
-                  <TableHead className="w-28">Status</TableHead>
+                  
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
                   <TableHead className="w-20">Email</TableHead>
