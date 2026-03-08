@@ -13,14 +13,36 @@ import {
   Download,
 } from "lucide-react";
 import { usePersonDetail, usePersonEvidence } from "@/hooks/useSignalPipeline";
+import { useUpdateReviewStatus } from "@/hooks/useShortlistData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { NavBar } from "@/components/NavBar";
 import { RubricBreakdown } from "@/components/RubricBreakdown";
 import { categorizeLocation } from "@/lib/categorizeLocation";
+
+const REVIEW_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "shortlisted", label: "Shortlisted" },
+  { value: "on_hold", label: "On hold" },
+  { value: "rejected", label: "Rejected" },
+] as const;
+
+function reviewBadgeVariant(status: string) {
+  switch (status) {
+    case "shortlisted": return "default";
+    case "on_hold": return "secondary";
+    case "rejected": return "destructive";
+    default: return "outline";
+  }
+}
+
+function reviewLabel(status: string) {
+  return REVIEW_OPTIONS.find(o => o.value === status)?.label ?? "Pending";
+}
 
 function OutreachCard({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -57,6 +79,7 @@ export default function LeadDetailPage() {
   const { login } = useParams<{ login: string }>();
   const { data: person, isLoading } = usePersonDetail(login || "");
   const { data: evidence } = usePersonEvidence(person?.id || "");
+  const updateReview = useUpdateReviewStatus();
 
   const handleDownloadCsv = () => {
     if (!person) return;
@@ -209,11 +232,26 @@ export default function LeadDetailPage() {
                 </div>
               </div>
 
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <p className="text-3xl font-bold text-foreground">
                   {(person.overall_score * 100).toFixed(0)}%
                 </p>
                 <p className="text-xs text-muted-foreground">Overall</p>
+                <Select
+                  value={person.review_status || "pending"}
+                  onValueChange={(val) => updateReview.mutate({ login: person.login, status: val })}
+                >
+                  <SelectTrigger className="h-7 w-[120px] text-xs border-0 bg-transparent px-0 focus:ring-0">
+                    <Badge variant={reviewBadgeVariant(person.review_status || "pending")} className="text-[10px]">
+                      {reviewLabel(person.review_status || "pending")}
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REVIEW_OPTIONS.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
