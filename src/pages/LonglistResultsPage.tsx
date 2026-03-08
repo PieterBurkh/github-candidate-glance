@@ -145,7 +145,7 @@ export default function LonglistResultsPage() {
                         {isSorted ? Math.round(enrichment.overall_score) : "–"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate">
-                        {isSorted ? summarizeAssessment(c.login) : "–"}
+                        {isSorted ? getAssessment(c.login) : "–"}
                       </TableCell>
                       <TableCell>
                         {hydration?.html_url && (
