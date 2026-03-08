@@ -34,7 +34,7 @@ export function LonglistApproachContent() {
               process <strong className="text-foreground">16,000+ unique candidates</strong> in a single pass.
             </p>
             <p>
-              The pipeline runs in 4 stages: Seeding, Hydration, Scoring, and Selection.
+              The pipeline runs in 3 stages: Seeding, Hydration, and Scoring.
             </p>
           </CardContent>
         </Card>
