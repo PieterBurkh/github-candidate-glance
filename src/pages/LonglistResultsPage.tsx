@@ -51,18 +51,16 @@ export default function LonglistResultsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={tierFilter || "all"} onValueChange={(v) => setTierFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="All tiers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tiers</SelectItem>
-                <SelectItem value="exploit">Exploit</SelectItem>
-                <SelectItem value="explore">Explore</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
               <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="score">Sort by Score</SelectItem>
+                <SelectItem value="confidence">Sort by Confidence</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
