@@ -41,9 +41,7 @@ const statusConfig: Record<string, { icon: typeof Clock; className: string; labe
 export function RunsContent() {
   const { data: runs, isLoading } = useRuns();
   const startRun = useStartRun();
-  const runEnrichment = useRunEnrichment();
   const resumeRun = useResumeRun();
-  const pauseRun = usePauseRun();
   const [showForm, setShowForm] = useState(false);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [selectedNets, setSelectedNets] = useState<string[]>(ALL_NETS.map((n) => n.id));
