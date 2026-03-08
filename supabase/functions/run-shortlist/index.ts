@@ -54,14 +54,13 @@ async function processShortlist(shortlistRunId: string) {
   }
   const uniqueLogins = [...seen.keys()]; // already in score-descending order
 
-  // Step 2: Find which logins already have a non-pending shortlist_status
+  // Step 2: Find which logins already have a people record (already enriched)
   const processedLogins = new Set<string>();
   for (let i = 0; i < uniqueLogins.length; i += PAGE_SIZE) {
     const batch = uniqueLogins.slice(i, i + PAGE_SIZE);
     const { data: done } = await sb.from("people")
       .select("login")
-      .in("login", batch)
-      .neq("shortlist_status", "pending");
+      .in("login", batch);
     if (done) done.forEach((p: any) => processedLogins.add(p.login));
   }
 
@@ -71,11 +70,9 @@ async function processShortlist(shortlistRunId: string) {
   console.log(`Shortlist run ${shortlistRunId}: ${totalCandidates} total, ${processedLogins.size} already done, ${pendingLogins.length} pending`);
 
   if (pendingLogins.length === 0) {
-    // All done — compute final stats
-    const stats = await getStats(sb);
     await sb.from("shortlist_runs").update({
       status: "done",
-      progress: { ...stats, total: totalCandidates },
+      progress: { total: totalCandidates, enriched: totalCandidates },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
     return;
@@ -140,9 +137,8 @@ async function processShortlist(shortlistRunId: string) {
     }
 
     // Update progress after each batch
-    const stats = await getStats(sb);
     await sb.from("shortlist_runs").update({
-      progress: { ...stats, total: totalCandidates, enriched: processedLogins.size + enriched, failed },
+      progress: { total: totalCandidates, enriched: processedLogins.size + enriched, failed },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
 
@@ -157,10 +153,9 @@ async function processShortlist(shortlistRunId: string) {
 
   if (remainingCount <= 0 && !rateLimited) {
     // Done
-    const stats = await getStats(sb);
     await sb.from("shortlist_runs").update({
       status: "done",
-      progress: { ...stats, total: totalCandidates },
+      progress: { total: totalCandidates, enriched: processedLogins.size + enriched },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
     console.log(`Shortlist run ${shortlistRunId} done`);
@@ -215,12 +210,6 @@ async function processShortlist(shortlistRunId: string) {
   console.log(`Self-chaining shortlist run ${shortlistRunId}...`);
 }
 
-async function getStats(sb: any) {
-  const { count: shortlisted } = await sb.from("people").select("id", { count: "exact", head: true }).eq("shortlist_status", "SHORTLIST");
-  const { count: needs_review } = await sb.from("people").select("id", { count: "exact", head: true }).eq("shortlist_status", "NEEDS_REVIEW");
-  const { count: rejected } = await sb.from("people").select("id", { count: "exact", head: true }).eq("shortlist_status", "NO");
-  return { shortlisted: shortlisted || 0, needs_review: needs_review || 0, rejected: rejected || 0 };
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

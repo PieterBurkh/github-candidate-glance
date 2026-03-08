@@ -40,7 +40,6 @@ function reviewLabel(status: string) {
 
 export default function LeadsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "enriched">("enriched");
@@ -51,7 +50,6 @@ export default function LeadsPage() {
   const enrichedOnly = (candidates || []).filter(c => {
     const e = enrichmentMap[c.login];
     if (!e) return false;
-    if (statusFilter && e.shortlist_status !== statusFilter) return false;
     if (reviewFilter && e.review_status !== reviewFilter) return false;
     if (locationFilter) {
       const loc = categorizeLocation(e.profile?.location);
@@ -145,18 +143,6 @@ export default function LeadsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="All statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="SHORTLIST">Shortlist</SelectItem>
-                <SelectItem value="NEEDS_REVIEW">Needs Review</SelectItem>
-                <SelectItem value="NO">No</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={locationFilter || "all"} onValueChange={(v) => setLocationFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All locations" />
@@ -196,7 +182,7 @@ export default function LeadsPage() {
                   <TableHead className="w-8">#</TableHead>
                   <TableHead>Candidate</TableHead>
                   <TableHead className="w-20 text-right">Pre-score</TableHead>
-                  <TableHead className="w-28">Status</TableHead>
+                  
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
                   <TableHead className="w-20">Email</TableHead>
@@ -246,17 +232,6 @@ export default function LeadsPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const status = enrichment?.shortlist_status || "pending";
-                          const variant = status === "SHORTLIST" ? "default" : status === "NEEDS_REVIEW" ? "secondary" : "outline";
-                          return (
-                            <Badge variant={variant} className="text-[10px]">
-                              {status === "NEEDS_REVIEW" ? "Needs Review" : status.charAt(0) + status.slice(1).toLowerCase()}
-                            </Badge>
-                          );
-                        })()}
-                      </TableCell>
                       <TableCell>
                         <Select
                           value={currentReview}

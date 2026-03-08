@@ -347,10 +347,10 @@ serve(async (req) => {
       const { data: person } = await supabase.from("people").select("id").eq("login", login).maybeSingle();
       if (person) {
         await supabase.from("people").update({
-          shortlist_status: "NO", overall_score: 0, updated_at: new Date().toISOString(),
+          overall_score: 0, updated_at: new Date().toISOString(),
         }).eq("id", person.id);
       }
-      return new Response(JSON.stringify({ login, status: "NO", reason: "no_evidence" }), {
+      return new Response(JSON.stringify({ login, overall_pct: 0, reason: "no_evidence" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -376,31 +376,6 @@ serve(async (req) => {
     // 6. Compute weighted must-have score
     const reactScore = scores.react_typescript?.score ?? 0;
 
-    // Hard gate: no React/TS evidence → automatic NO
-    if (reactScore < 0.25) {
-      const { data: person } = await supabase.from("people").select("id").eq("login", login).maybeSingle();
-      const profileData = {
-        name: profile.name, avatar_url: profile.avatar_url, html_url: profile.html_url,
-        bio: profile.bio, blog: profile.blog, email: profile.email,
-        twitter_username: profile.twitter_username, public_repos: profile.public_repos,
-        followers: profile.followers, company: profile.company, location: profile.location,
-        is_real_person: true,
-      };
-      if (person) {
-        await supabase.from("people").update({
-          profile: profileData, shortlist_status: "NO", overall_score: 0,
-          updated_at: new Date().toISOString(),
-        }).eq("id", person.id);
-      } else {
-        await supabase.from("people").insert({
-          login, profile: profileData, overall_score: 0, shortlist_status: "NO",
-        });
-      }
-      return new Response(JSON.stringify({ login, shortlist_status: "NO", reason: "no_react_ts", react_score: reactScore }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Weighted must-have average
     let weightedMustSum = 0;
     for (const c of MUST_HAVE_CRITERIA) {
@@ -412,17 +387,7 @@ serve(async (req) => {
     const niceAvg = niceScores.reduce((a, b) => a + b, 0) / niceScores.length;
     const overallPct = Math.round(100 * (0.80 * mustAvg + 0.20 * niceAvg));
 
-    // 7. Determine status
-    let shortlistStatus: string;
-    if (overallPct >= 65 && mustAvg >= 0.60) {
-      shortlistStatus = "SHORTLIST";
-    } else if (overallPct >= 65) {
-      shortlistStatus = "NEEDS_REVIEW";
-    } else {
-      shortlistStatus = "NO";
-    }
-
-    // 8. Upsert people record
+    // 7. Upsert people record
     const profileData = {
       name: profile.name, avatar_url: profile.avatar_url, html_url: profile.html_url,
       bio: profile.bio, blog: profile.blog, email: profile.email,
@@ -437,12 +402,12 @@ serve(async (req) => {
     if (existingPerson) {
       personId = existingPerson.id;
       await supabase.from("people").update({
-        profile: profileData, overall_score: overallPct, shortlist_status: shortlistStatus,
+        profile: profileData, overall_score: overallPct,
         updated_at: new Date().toISOString(),
       }).eq("id", personId);
     } else {
       const { data: newPerson, error: personErr } = await supabase.from("people").insert({
-        login, profile: profileData, overall_score: overallPct, shortlist_status: shortlistStatus,
+        login, profile: profileData, overall_score: overallPct,
       }).select("id").single();
       if (personErr) throw new Error(`Person insert failed: ${personErr.message}`);
       personId = newPerson.id;
@@ -469,7 +434,7 @@ serve(async (req) => {
     });
 
     return new Response(JSON.stringify({
-      login, shortlist_status: shortlistStatus, overall_pct: overallPct,
+      login, overall_pct: overallPct,
       must_avg: Math.round(mustAvg * 100) / 100, nice_avg: Math.round(niceAvg * 100) / 100,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (err) {
