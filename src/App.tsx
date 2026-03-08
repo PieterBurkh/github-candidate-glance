@@ -11,6 +11,7 @@ import LonglistPage from "./pages/LonglistPage";
 import GlobalLonglistPage from "./pages/GlobalLonglistPage";
 import LonglistResultsPage from "./pages/LonglistResultsPage";
 import ApproachOverviewPage from "./pages/ApproachOverviewPage";
+import StartHerePage from "./pages/StartHerePage";
 
 import NotFound from "./pages/NotFound";
 
