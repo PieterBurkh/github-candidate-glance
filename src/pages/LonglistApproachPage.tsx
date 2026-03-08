@@ -127,13 +127,16 @@ export default function LonglistApproachPage() {
                   key={s.factor}
                   className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
                 >
-                  <span className="text-muted-foreground">{s.factor}</span>
-                  <Badge variant="secondary" className="font-mono text-xs">{s.points}</Badge>
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground">{s.factor}</span>
+                    {s.note && <span className="text-xs text-muted-foreground/60">{s.note}</span>}
+                  </div>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0 ml-2">{s.points}</Badge>
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Scores are capped at 100. The maximum achievable score with all signals present is 80.
+              Scores are capped at 100. The theoretical maximum with all signals is ~97. Tiered criteria (e.g. stars, followers) award the higher value only — they don't stack.
             </p>
           </CardContent>
         </Card>
