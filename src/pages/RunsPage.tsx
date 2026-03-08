@@ -173,9 +173,20 @@ export function RunsContent() {
                             Incomplete — resume to finish
                           </Badge>
                         )}
-                        {effectiveStatus === "paused" && (
+                        {effectiveStatus === "paused" && phase !== "user_paused" && (
                           <Badge variant="secondary" className="text-[10px] text-amber-600">
                             Partial — resume to continue
+                          </Badge>
+                        )}
+                        {phase === "user_paused" && (
+                          <Badge variant="secondary" className="text-[10px] text-amber-600">
+                            Paused by you — resume to continue
+                          </Badge>
+                        )}
+                        {isAutoContinuing && (
+                          <Badge variant="secondary" className="text-[10px] text-primary gap-1">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Auto-continuing…
                           </Badge>
                         )}
                         <span className="text-xs text-muted-foreground">
