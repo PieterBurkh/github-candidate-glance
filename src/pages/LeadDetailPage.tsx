@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { NavBar } from "@/components/NavBar";
 import { RubricBreakdown } from "@/components/RubricBreakdown";
-import { categorizeLocation, extractLinkedIn } from "@/lib/categorizeLocation";
+import { categorizeLocation } from "@/lib/categorizeLocation";
 
 function OutreachCard({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
