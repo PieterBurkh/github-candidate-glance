@@ -134,7 +134,7 @@ const ALL_NETS: NetDef[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const DEADLINE_MS = 140_000;
+const DEADLINE_MS = 300_000; // 5 minutes — allows time for rate-limit pacing
 const FLUSH_INTERVAL = 20;
 const MAX_GITHUB_PAGE = 34; // GitHub caps at 1,000 results; at perPage=30 that's ~34 pages
 
@@ -409,6 +409,11 @@ serve(async (req) => {
 
               const q = `${query} stars:${band}`;
               const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${sort}&order=desc&per_page=${perPage}&page=${page}`;
+
+              // Proactive rate-limit pacing: 2s between calls ≈ 30 req/min
+              if (queryCount > 0) {
+                await new Promise((r) => setTimeout(r, 2000));
+              }
 
               const res = await githubFetch(url);
               queryCount++;
