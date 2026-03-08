@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import {
   Play,
   Loader2,
@@ -7,10 +6,6 @@ import {
   XCircle,
   Clock,
   Plus,
-  Zap,
-  ArrowRight,
-  List,
-  Pause,
   AlertTriangle,
 } from "lucide-react";
 import { useRuns, useStartRun, useRunEnrichment, useResumeRun, usePauseRun } from "@/hooks/useSignalPipeline";
