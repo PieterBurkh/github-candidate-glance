@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Users, Star, Download, Linkedin, Mail } from "lucide-react";
+import { ExternalLink, Users, Star, Download, Mail } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
-import { categorizeLocation, extractLinkedIn, type LocationCategory } from "@/lib/categorizeLocation";
+import { categorizeLocation, type LocationCategory } from "@/lib/categorizeLocation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -71,13 +71,12 @@ export default function LeadsPage() {
 
   const downloadCsv = useCallback(() => {
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const headers = ["rank","login","name","pre_score","tier","status","review_status","location","location_category","email","linkedin","followers","repos","enriched_score","assessment","outreach_draft"];
+    const headers = ["rank","login","name","pre_score","tier","status","review_status","location","location_category","email","followers","repos","enriched_score","assessment","outreach_draft"];
     const rows = sorted.map((c, idx) => {
       const h = c.hydration as any;
       const e = enrichmentMap[c.login];
       const prof = e?.profile || {};
       const rubric = e?.evidence?.find((ev: any) => ev.criterion === "shortlist_rubric")?.evidence as any;
-      const linkedIn = extractLinkedIn(prof);
       return [
         idx + 1,
         c.login,
@@ -89,7 +88,6 @@ export default function LeadsPage() {
         escape(prof.location || ""),
         categorizeLocation(prof.location),
         prof.email || "",
-        linkedIn || "",
         h?.followers ?? "",
         h?.public_repos ?? "",
         e ? e.overall_score : "",
@@ -196,7 +194,7 @@ export default function LeadsPage() {
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
                   <TableHead className="w-20">Email</TableHead>
-                  <TableHead className="w-20">LinkedIn</TableHead>
+                  
                   <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Score</TableHead>
@@ -213,7 +211,7 @@ export default function LeadsPage() {
                   const currentReview = enrichment?.review_status || "pending";
                   const prof = enrichment?.profile || {} as any;
                   const locCategory = categorizeLocation(prof?.location);
-                  const linkedIn = extractLinkedIn(prof);
+                  
 
                   return (
                     <TableRow key={c.id}>
@@ -288,16 +286,6 @@ export default function LeadsPage() {
                           <a href={`mailto:${prof.email}`} className="text-muted-foreground hover:text-primary flex items-center gap-1">
                             <Mail className="h-3 w-3" />
                             <span className="truncate max-w-[100px]">{prof.email}</span>
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {linkedIn ? (
-                          <a href={linkedIn} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary flex items-center gap-1">
-                            <Linkedin className="h-3 w-3" />
-                            <span>Profile</span>
                           </a>
                         ) : (
                           <span className="text-muted-foreground">N/A</span>

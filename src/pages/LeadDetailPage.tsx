@@ -20,7 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { NavBar } from "@/components/NavBar";
 import { RubricBreakdown } from "@/components/RubricBreakdown";
-import { categorizeLocation, extractLinkedIn } from "@/lib/categorizeLocation";
+import { categorizeLocation } from "@/lib/categorizeLocation";
 
 function OutreachCard({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -127,19 +127,6 @@ export default function LeadDetailPage() {
                       <Building className="h-3 w-3" /> {p.company}
                     </span>
                   )}
-                  {(() => {
-                    const li = extractLinkedIn(p);
-                    return li ? (
-                      <a
-                        href={li}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 hover:text-primary"
-                      >
-                        <Linkedin className="h-3 w-3" /> LinkedIn
-                      </a>
-                    ) : null;
-                  })()}
                   {p.blog && (
                     <a
                       href={p.blog.startsWith("http") ? p.blog : `https://${p.blog}`}
