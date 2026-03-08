@@ -28,24 +28,31 @@ async function processShortlist(shortlistRunId: string) {
     status: "running", updated_at: new Date().toISOString(),
   }).eq("id", shortlistRunId);
 
-  // Fetch exploit/explore candidates that haven't been shortlist-enriched yet
+  // Fetch high-scoring candidates that haven't been shortlist-enriched yet
   // A candidate is "done" if there's a people record with shortlist_status != 'pending'
-  // We fetch ALL exploit/explore logins, then check which are already processed
 
-  // Step 1: Get all exploit/explore candidate logins (paginated)
-  const allLogins: string[] = [];
+  // Step 1: Get all candidates scoring 70+ ordered by score desc (paginated)
+  const allCandidates: { login: string; pre_score: number }[] = [];
   let from = 0;
   while (true) {
     const { data: page } = await sb.from("longlist_candidates")
-      .select("login")
-      .in("selection_tier", ["exploit", "explore"])
+      .select("login, pre_score")
+      .gte("pre_score", 70)
+      .order("pre_score", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
     if (!page || page.length === 0) break;
-    allLogins.push(...page.map((c: any) => c.login));
+    allCandidates.push(...page);
     if (page.length < PAGE_SIZE) break;
     from += PAGE_SIZE;
   }
-  const uniqueLogins = [...new Set(allLogins)];
+  // Deduplicate by login, keep highest score
+  const seen = new Map<string, number>();
+  for (const c of allCandidates) {
+    if (!seen.has(c.login) || c.pre_score > seen.get(c.login)!) {
+      seen.set(c.login, c.pre_score);
+    }
+  }
+  const uniqueLogins = [...seen.keys()]; // already in score-descending order
 
   // Step 2: Find which logins already have a non-pending shortlist_status
   const processedLogins = new Set<string>();
