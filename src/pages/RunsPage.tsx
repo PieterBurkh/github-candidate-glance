@@ -60,7 +60,7 @@ export function RunsContent() {
   };
 
   const handleNewRun = async () => {
-    await startRun.mutateAsync({ nets: selectedNets, perPage, maxPages });
+    await startRun.mutateAsync({ nets: selectedNets, perPage: 30, maxPages: 1 });
     setShowForm(false);
   };
 
