@@ -79,7 +79,6 @@ export default function LeadDetailPage() {
       v(categorizeLocation(p.location)), v(p.company), v(p.blog),
       v(p.followers), v(p.public_repos),
       v((person.overall_score * 100).toFixed(1)),
-      v(person.shortlist_status), v(person.review_status),
       v(rd?.assessment), v(rd?.outreach_draft),
       ...MUST_HAVE_KEYS.flatMap(k => {
         const e = rd?.must_haves?.[k];
