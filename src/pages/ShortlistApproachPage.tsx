@@ -116,7 +116,7 @@ export function ShortlistApproachContent() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Badge className="text-xs">80% weight</Badge>
-              <CardTitle className="text-lg">Must-haves (6 criteria)</CardTitle>
+              <CardTitle className="text-lg">Must-haves (4 criteria)</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
