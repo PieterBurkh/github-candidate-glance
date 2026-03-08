@@ -21,13 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { NavBar } from "@/components/NavBar";
 import { RubricBreakdown } from "@/components/RubricBreakdown";
 import { categorizeLocation, extractLinkedIn } from "@/lib/categorizeLocation";
-import { usePersonDetail, usePersonEvidence } from "@/hooks/useSignalPipeline";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { NavBar } from "@/components/NavBar";
-import { RubricBreakdown } from "@/components/RubricBreakdown";
 
 function OutreachCard({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
