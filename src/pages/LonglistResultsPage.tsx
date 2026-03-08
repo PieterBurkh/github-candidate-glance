@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
-import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
+import { useDynamicLonglist } from "@/hooks/useLonglistPipeline";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NavBar } from "@/components/NavBar";
