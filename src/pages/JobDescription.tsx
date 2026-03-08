@@ -15,7 +15,7 @@ const JobDescription = () => {
             className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to candidates
+            Back
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Senior Frontend Engineer
