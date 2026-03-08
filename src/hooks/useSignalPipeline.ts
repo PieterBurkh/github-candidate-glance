@@ -143,9 +143,20 @@ export function usePauseRun() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (runId: string) => {
+      // First get current params to preserve them
+      const { data: run } = await supabase
+        .from("runs")
+        .select("search_params")
+        .eq("id", runId)
+        .single();
+      const currentParams = (run?.search_params as any) || {};
       const { error } = await supabase
         .from("runs")
-        .update({ status: "paused", updated_at: new Date().toISOString() })
+        .update({
+          status: "paused",
+          updated_at: new Date().toISOString(),
+          search_params: { ...currentParams, phase: "user_paused" },
+        })
         .eq("id", runId);
       if (error) throw error;
     },
