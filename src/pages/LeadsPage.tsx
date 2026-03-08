@@ -71,7 +71,7 @@ export default function LeadsPage() {
 
   const downloadCsv = useCallback(() => {
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const headers = ["rank","login","name","pre_score","tier","status","review_status","location","location_category","email","linkedin","followers","repos","enriched_score","assessment","outreach_draft"];
+    const headers = ["rank","login","name","pre_score","tier","status","review_status","location","location_category","email","followers","repos","enriched_score","assessment","outreach_draft"];
     const rows = sorted.map((c, idx) => {
       const h = c.hydration as any;
       const e = enrichmentMap[c.login];
