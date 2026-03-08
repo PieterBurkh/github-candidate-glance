@@ -40,7 +40,6 @@ function reviewLabel(status: string) {
 
 export default function LeadsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "enriched">("enriched");
