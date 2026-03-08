@@ -134,7 +134,7 @@ const ALL_NETS: NetDef[] = [
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const DEADLINE_MS = 140_000;
+const DEADLINE_MS = 300_000; // 5 minutes — allows time for rate-limit pacing
 const FLUSH_INTERVAL = 20;
 const MAX_GITHUB_PAGE = 34; // GitHub caps at 1,000 results; at perPage=30 that's ~34 pages
 
