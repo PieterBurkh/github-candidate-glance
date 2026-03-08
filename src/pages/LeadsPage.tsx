@@ -69,9 +69,18 @@ export default function LeadsPage() {
     return b.pre_score - a.pre_score;
   });
 
+  const MH_KEYS = ["react_typescript", "rich_app_architecture", "performance_profiling", "docs_versioning"];
+  const NH_KEYS = ["bpmn_uml_uis", "wcag_accessibility", "semver_library_maintenance", "crdts", "wasm", "canvas_webgl"];
+
   const downloadCsv = useCallback(() => {
-    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const headers = ["rank","login","name","pre_score","tier","status","review_status","location","location_category","email","followers","repos","enriched_score","assessment","outreach_draft"];
+    const v = (s: any) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+    const headers = [
+      "rank","login","name","pre_score","tier","status","review_status",
+      "location","location_category","email","followers","repos","enriched_score",
+      "assessment","outreach_draft",
+      ...MH_KEYS.flatMap(k => [`mh_${k}_score`, `mh_${k}_evidence`]),
+      ...NH_KEYS.flatMap(k => [`nh_${k}_score`, `nh_${k}_evidence`]),
+    ];
     const rows = sorted.map((c, idx) => {
       const h = c.hydration as any;
       const e = enrichmentMap[c.login];
@@ -80,19 +89,27 @@ export default function LeadsPage() {
       return [
         idx + 1,
         c.login,
-        escape(h?.name || ""),
+        v(h?.name || ""),
         c.pre_score,
         c.selection_tier || "",
         e?.shortlist_status || "pending",
         e?.review_status || "pending",
-        escape(prof.location || ""),
-        categorizeLocation(prof.location),
-        prof.email || "",
+        v((prof as any).location || ""),
+        categorizeLocation((prof as any).location),
+        (prof as any).email || "",
         h?.followers ?? "",
         h?.public_repos ?? "",
         e ? e.overall_score : "",
-        escape(rubric?.assessment || ""),
-        escape(rubric?.outreach_draft || ""),
+        v(rubric?.assessment || ""),
+        v(rubric?.outreach_draft || ""),
+        ...MH_KEYS.flatMap(k => {
+          const cr = rubric?.must_haves?.[k];
+          return [cr?.score != null ? (cr.score * 100).toFixed(0) : "", v(cr?.evidence)];
+        }),
+        ...NH_KEYS.flatMap(k => {
+          const cr = rubric?.nice_to_haves?.[k];
+          return [cr?.score != null ? (cr.score * 100).toFixed(0) : "", v(cr?.evidence)];
+        }),
       ].join(",");
     });
     const csv = [headers.join(","), ...rows].join("\n");
