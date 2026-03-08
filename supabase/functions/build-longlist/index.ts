@@ -14,7 +14,7 @@ const DEADLINE_MS = 140_000;
 const BATCH_SIZE = 50;
 const CONCURRENCY = 10;
 const PAGE_SIZE = 500;
-const INLINE_EXPLOIT_THRESHOLD = 80;
+
 
 function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
