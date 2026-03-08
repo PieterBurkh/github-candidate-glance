@@ -111,8 +111,8 @@ export default function LonglistResultsPage() {
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{Math.round(c.pre_confidence * 100)}%</TableCell>
                       <TableCell>
-                        <Badge variant={c.selection_tier === "exploit" ? "default" : "secondary"} className="text-[10px]">
-                          {c.selection_tier}
+                        <Badge variant={c.computed_tier === "exploit" ? "default" : "secondary"} className="text-[10px]">
+                          {c.computed_tier}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
