@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { ExternalLink, Users, Star, Download } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
-import { useShortlistEnrichment } from "@/hooks/useShortlistData";
+import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,17 +17,40 @@ import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+const REVIEW_OPTIONS = [
+  { value: "pending", label: "Pending" },
+  { value: "shortlisted", label: "Shortlisted" },
+  { value: "on_hold", label: "On hold" },
+  { value: "rejected", label: "Rejected" },
+] as const;
+
+function reviewBadgeVariant(status: string) {
+  switch (status) {
+    case "shortlisted": return "default";
+    case "on_hold": return "secondary";
+    case "rejected": return "destructive";
+    default: return "outline";
+  }
+}
+
+function reviewLabel(status: string) {
+  return REVIEW_OPTIONS.find(o => o.value === status)?.label ?? "Pending";
+}
+
 export default function LeadsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [reviewFilter, setReviewFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "enriched">("enriched");
   const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
+  const updateReview = useUpdateReviewStatus();
 
   const enrichedOnly = (candidates || []).filter(c => {
     const e = enrichmentMap[c.login];
     if (!e) return false;
     if (statusFilter && e.shortlist_status !== statusFilter) return false;
+    if (reviewFilter && e.review_status !== reviewFilter) return false;
     return true;
   });
 
@@ -42,7 +65,7 @@ export default function LeadsPage() {
 
   const downloadCsv = useCallback(() => {
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const headers = ["rank","login","name","pre_score","tier","status","followers","repos","enriched_score","assessment"];
+    const headers = ["rank","login","name","pre_score","tier","status","review_status","followers","repos","enriched_score","assessment"];
     const rows = sorted.map((c, idx) => {
       const h = c.hydration as any;
       const e = enrichmentMap[c.login];
@@ -54,6 +77,7 @@ export default function LeadsPage() {
         c.pre_score,
         c.selection_tier || "",
         e?.shortlist_status || "pending",
+        e?.review_status || "pending",
         h?.followers ?? "",
         h?.public_repos ?? "",
         e ? e.overall_score : "",
@@ -81,7 +105,18 @@ export default function LeadsPage() {
               {sorted.length} enriched candidates
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Select value={reviewFilter || "all"} onValueChange={(v) => setReviewFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All reviews" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All reviews</SelectItem>
+                {REVIEW_OPTIONS.map(o => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All statuses" />
@@ -132,6 +167,7 @@ export default function LeadsPage() {
                   <TableHead className="w-20 text-right">Pre-score</TableHead>
                   <TableHead className="w-24">Tier</TableHead>
                   <TableHead className="w-28">Status</TableHead>
+                  <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Score</TableHead>
@@ -144,6 +180,7 @@ export default function LeadsPage() {
                   const h = c.hydration as any;
                   const enrichment = enrichmentMap[c.login];
                   const rubric = enrichment?.evidence?.find((e: any) => e.criterion === "shortlist_rubric")?.evidence as any;
+                  const currentReview = enrichment?.review_status || "pending";
 
                   return (
                     <TableRow key={c.id}>
@@ -190,6 +227,23 @@ export default function LeadsPage() {
                             </Badge>
                           );
                         })()}
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={currentReview}
+                          onValueChange={(v) => updateReview.mutate({ login: c.login, status: v })}
+                        >
+                          <SelectTrigger className="h-7 w-[120px] text-xs border-0 bg-transparent px-0 focus:ring-0">
+                            <Badge variant={reviewBadgeVariant(currentReview)} className="text-[10px]">
+                              {reviewLabel(currentReview)}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {REVIEW_OPTIONS.map(o => (
+                              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         {h?.followers != null ? (
