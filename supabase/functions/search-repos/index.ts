@@ -136,6 +136,7 @@ const ALL_NETS: NetDef[] = [
 
 const DEADLINE_MS = 140_000;
 const FLUSH_INTERVAL = 20;
+const MAX_GITHUB_PAGE = 34; // GitHub caps at 1,000 results; at perPage=30 that's ~34 pages
 
 interface Cursor {
   netIdx: number;
@@ -143,6 +144,11 @@ interface Cursor {
   bandIdx: number;
   sortIdx: number;
   page: number;
+}
+
+// Watermark key for a specific query combination
+function watermarkKey(netId: string, queryIdx: number, bandIdx: number, sortIdx: number): string {
+  return `${netId}|${queryIdx}|${bandIdx}|${sortIdx}`;
 }
 
 async function flushRepos(
@@ -194,6 +200,23 @@ function shouldSkip(
   return false;
 }
 
+// ── Load watermarks from the most recent completed/paused run ────────
+async function loadWatermarks(
+  supabase: ReturnType<typeof createClient>
+): Promise<Record<string, number>> {
+  const { data: lastRun } = await supabase
+    .from("runs")
+    .select("search_params")
+    .in("status", ["completed", "paused"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!lastRun?.search_params) return {};
+  const params = lastRun.search_params as Record<string, any>;
+  return (params.page_watermarks as Record<string, number>) || {};
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -212,12 +235,19 @@ serve(async (req) => {
   // ── Shared cursor state for finally block ──
   let lastCursor: Cursor | null = null;
   let resumeCount = 0;
+  // Track watermarks updated during this run
+  let currentWatermarks: Record<string, number> = {};
 
   try {
     const body = await req.json().catch(() => ({}));
     const resumeRunId = body.runId as string | undefined;
     let cursor: Cursor | null = null;
     let preloadedKeys: Set<string> | undefined;
+
+    // Load watermarks from the most recent completed run
+    const priorWatermarks = await loadWatermarks(supabase);
+    currentWatermarks = { ...priorWatermarks };
+    console.log(`Loaded ${Object.keys(priorWatermarks).length} prior watermarks`);
 
     if (resumeRunId) {
       // ── Resume existing run ──
@@ -234,6 +264,11 @@ serve(async (req) => {
       perPage = savedParams.perPage || 30;
       maxPages = savedParams.maxPages || 1;
       resumeCount = (savedParams.resume_count || 0) + 1;
+
+      // If this run already has watermarks in progress, use those
+      if (savedParams.page_watermarks) {
+        currentWatermarks = { ...priorWatermarks, ...savedParams.page_watermarks };
+      }
 
       const netIds = savedParams.nets || [];
       netsToRun = netIds.length > 0
@@ -288,6 +323,7 @@ serve(async (req) => {
         maxPages,
         resume_count: 0,
         phase: "starting",
+        page_watermarks: currentWatermarks,
       };
 
       const { data: run, error: runErr } = await supabase
@@ -315,6 +351,7 @@ serve(async (req) => {
 
     let queryCount = 0;
     let consecutiveErrors = 0;
+    let skippedExhausted = 0;
     const MAX_CONSECUTIVE_ERRORS = 20;
 
     for (let netIdx = 0; netIdx < netsToRun.length; netIdx++) {
@@ -333,15 +370,29 @@ serve(async (req) => {
             const sort = net.sorts[sortIdx];
             if (Date.now() > deadline) { timedOut = true; break; }
 
-            for (let page = 1; page <= maxPages; page++) {
+            // ── Watermark logic: determine start page ──
+            const wmKey = watermarkKey(net.id, queryIdx, bandIdx, sortIdx);
+            const lastFetchedPage = priorWatermarks[wmKey] || 0;
+            const maxAllowedPage = Math.floor(1000 / perPage); // GitHub hard cap
+            const startPage = lastFetchedPage + 1;
+
+            // Skip exhausted combinations
+            if (startPage > maxAllowedPage) {
+              skippedExhausted++;
+              continue;
+            }
+
+            const endPage = Math.min(startPage + maxPages - 1, maxAllowedPage);
+
+            for (let page = startPage; page <= endPage; page++) {
               if (Date.now() > deadline) { timedOut = true; break; }
 
-              // Skip iterations before cursor position
+              // Skip iterations before cursor position (for resume)
               if (shouldSkip(cursor, netIdx, queryIdx, bandIdx, sortIdx, page)) {
                 continue;
               }
 
-              // Update lastCursor BEFORE the API call so we always have the current position
+              // Update lastCursor BEFORE the API call
               lastCursor = { netIdx, queryIdx, bandIdx, sortIdx, page };
 
               const q = `${query} stars:${band}`;
@@ -351,15 +402,13 @@ serve(async (req) => {
               queryCount++;
 
               if (!res.ok) {
-                console.error(`Search failed [${net.id}] "${q}" sort=${sort}: ${res.status}`);
+                console.error(`Search failed [${net.id}] "${q}" sort=${sort} page=${page}: ${res.status}`);
                 consecutiveErrors++;
 
                 if (res.status === 403 || res.status === 429) {
-                  // If we're getting rate-limited repeatedly, checkpoint and bail
                   if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
                     console.error(`Too many consecutive errors (${consecutiveErrors}), checkpointing and pausing`);
                     timedOut = true;
-                    // Set cursor to NEXT iteration
                     lastCursor = { netIdx, queryIdx, bandIdx, sortIdx, page: page + 1 };
                     break;
                   }
@@ -372,7 +421,16 @@ serve(async (req) => {
               consecutiveErrors = 0;
 
               const data = await res.json();
-              for (const item of data.items || []) {
+              const items = data.items || [];
+
+              // If GitHub returned no items, this combination is exhausted beyond this page
+              if (items.length === 0) {
+                currentWatermarks[wmKey] = maxAllowedPage; // Mark exhausted
+                console.log(`Exhausted: ${wmKey} at page ${page} (no results)`);
+                break;
+              }
+
+              for (const item of items) {
                 if (item.owner?.type !== "User") continue;
 
                 const existing = repoMap.get(item.full_name);
@@ -401,6 +459,9 @@ serve(async (req) => {
                 }
               }
 
+              // Update watermark to this page
+              currentWatermarks[wmKey] = Math.max(currentWatermarks[wmKey] || 0, page);
+
               // After the page completes, advance lastCursor to next page
               lastCursor = { netIdx, queryIdx, bandIdx, sortIdx, page: page + 1 };
 
@@ -414,11 +475,19 @@ serve(async (req) => {
                     ...savedParams,
                     repos_found: totalRepos,
                     cursor: lastCursor,
+                    page_watermarks: currentWatermarks,
                     last_checkpoint_at: new Date().toISOString(),
                     phase: `net:${net.id}`,
                     resume_count: resumeCount,
                   },
                 }).eq("id", runId);
+              }
+
+              // If fewer results than perPage, no more pages for this combination
+              if (items.length < perPage) {
+                currentWatermarks[wmKey] = maxAllowedPage; // Mark exhausted
+                console.log(`Exhausted: ${wmKey} at page ${page} (partial page: ${items.length}/${perPage})`);
+                break;
               }
 
               await new Promise((r) => setTimeout(r, 200));
@@ -442,8 +511,10 @@ serve(async (req) => {
     totalRepos = new Set([...flushedKeys, ...repoMap.keys()]).size;
     succeeded = true;
 
+    console.log(`Run complete: ${totalRepos} repos, ${skippedExhausted} exhausted combos skipped, ${queryCount} API calls`);
+
     return new Response(
-      JSON.stringify({ runId, repoCount: totalRepos, timedOut }),
+      JSON.stringify({ runId, repoCount: totalRepos, timedOut, skippedExhausted, queryCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
@@ -461,22 +532,20 @@ serve(async (req) => {
         ...savedParams,
         repos_found: totalRepos,
         resume_count: resumeCount,
+        page_watermarks: currentWatermarks,
         last_checkpoint_at: new Date().toISOString(),
       };
 
       if (timedOut && succeeded) {
-        // Save cursor so we can resume — lastCursor is always up-to-date
         finalParams.cursor = lastCursor;
         finalParams.timed_out = true;
         finalParams.phase = "paused_with_cursor";
         console.log(`Run ${runId} paused with cursor: ${JSON.stringify(lastCursor)}`);
       } else if (succeeded) {
-        // Completed — clear cursor
         delete finalParams.cursor;
         finalParams.timed_out = false;
         finalParams.phase = "completed";
       } else {
-        // Failed — preserve cursor for potential manual resume
         finalParams.cursor = lastCursor;
         finalParams.timed_out = false;
         finalParams.phase = "failed";
