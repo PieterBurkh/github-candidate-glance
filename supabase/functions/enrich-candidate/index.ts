@@ -376,31 +376,6 @@ serve(async (req) => {
     // 6. Compute weighted must-have score
     const reactScore = scores.react_typescript?.score ?? 0;
 
-    // Hard gate: no React/TS evidence → automatic NO
-    if (reactScore < 0.25) {
-      const { data: person } = await supabase.from("people").select("id").eq("login", login).maybeSingle();
-      const profileData = {
-        name: profile.name, avatar_url: profile.avatar_url, html_url: profile.html_url,
-        bio: profile.bio, blog: profile.blog, email: profile.email,
-        twitter_username: profile.twitter_username, public_repos: profile.public_repos,
-        followers: profile.followers, company: profile.company, location: profile.location,
-        is_real_person: true,
-      };
-      if (person) {
-        await supabase.from("people").update({
-          profile: profileData, shortlist_status: "NO", overall_score: 0,
-          updated_at: new Date().toISOString(),
-        }).eq("id", person.id);
-      } else {
-        await supabase.from("people").insert({
-          login, profile: profileData, overall_score: 0, shortlist_status: "NO",
-        });
-      }
-      return new Response(JSON.stringify({ login, shortlist_status: "NO", reason: "no_react_ts", react_score: reactScore }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     // Weighted must-have average
     let weightedMustSum = 0;
     for (const c of MUST_HAVE_CRITERIA) {
