@@ -209,7 +209,7 @@ export default function LeadsPage() {
                   
 
                   return (
-                    <TableRow key={c.id}>
+                    <TableRow key={c.id} className="cursor-pointer" onClick={() => navigate(`/leads/${c.login}`)}>
                       <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
