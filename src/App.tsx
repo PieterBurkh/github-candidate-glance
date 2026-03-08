@@ -15,6 +15,7 @@ import ApproachPage from "./pages/ApproachPage";
 import LonglistApproachPage from "./pages/LonglistApproachPage";
 import ShortlistApproachPage from "./pages/ShortlistApproachPage";
 import ShortlistRunsPage from "./pages/ShortlistRunsPage";
+import PipelineRunsPage from "./pages/PipelineRunsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
