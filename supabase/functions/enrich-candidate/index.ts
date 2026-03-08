@@ -387,17 +387,7 @@ serve(async (req) => {
     const niceAvg = niceScores.reduce((a, b) => a + b, 0) / niceScores.length;
     const overallPct = Math.round(100 * (0.80 * mustAvg + 0.20 * niceAvg));
 
-    // 7. Determine status
-    let shortlistStatus: string;
-    if (overallPct >= 65 && mustAvg >= 0.60) {
-      shortlistStatus = "SHORTLIST";
-    } else if (overallPct >= 65) {
-      shortlistStatus = "NEEDS_REVIEW";
-    } else {
-      shortlistStatus = "NO";
-    }
-
-    // 8. Upsert people record
+    // 7. Upsert people record
     const profileData = {
       name: profile.name, avatar_url: profile.avatar_url, html_url: profile.html_url,
       bio: profile.bio, blog: profile.blog, email: profile.email,
