@@ -61,14 +61,6 @@ export default function LonglistResultsPage() {
               </SelectContent>
             </Select>
           </div>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score">Sort by Score</SelectItem>
-                <SelectItem value="confidence">Sort by Confidence</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
         {isLoading ? (
@@ -81,7 +73,6 @@ export default function LonglistResultsPage() {
                   <TableHead>Login</TableHead>
                   <TableHead className="w-20 text-right">Score</TableHead>
                   <TableHead className="w-24 text-right">Confidence</TableHead>
-                  <TableHead className="w-24">Tier</TableHead>
                   <TableHead>Key Signals</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
@@ -106,11 +97,6 @@ export default function LonglistResultsPage() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{Math.round(c.pre_confidence * 100)}%</TableCell>
-                      <TableCell>
-                        <Badge variant={c.computed_tier === "exploit" ? "default" : "secondary"} className="text-[10px]">
-                          {c.computed_tier}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                         {summarizeSignals(c.repo_signals)}
                       </TableCell>
