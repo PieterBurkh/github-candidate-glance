@@ -72,8 +72,21 @@ async function advancePipeline(pipelineRunId: string) {
     if (run.status === "running") return { stage: "initial_list", waiting: true };
 
     if (run.status === "paused") {
+      const params = run.search_params as Record<string, unknown>;
+      const hasCursor = params?.cursor != null;
+      const resumeCount = (params?.resume_count as number) || 0;
+
+      // Fail-fast: if timed_out but no cursor saved, something is broken
+      if (params?.timed_out && !hasCursor) {
+        await update({
+          stage: "failed",
+          error: `Initial list stalled: timed out ${resumeCount} times but cursor is null. Cannot resume.`,
+        });
+        return { stage: "failed", error: "cursor_null_after_timeout" };
+      }
+
       fireAndForget("search-repos", { runId: pr.run_id });
-      return { stage: "initial_list", resumed: true };
+      return { stage: "initial_list", resumed: true, resumeCount };
     }
 
     if (run.status === "failed") {
