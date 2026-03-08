@@ -45,10 +45,62 @@ function OutreachCard({ text }: { text: string }) {
   );
 }
 
+const MUST_HAVE_KEYS = ["react_typescript", "rich_app_architecture", "performance_profiling", "docs_versioning"];
+const NICE_TO_HAVE_KEYS = ["bpmn_uml_uis", "wcag_accessibility", "semver_library_maintenance", "crdts", "wasm", "canvas_webgl"];
+
+function escapeCsv(val: string) {
+  if (/[",\n\r]/.test(val)) return `"${val.replace(/"/g, '""')}"`;
+  return val;
+}
+
 export default function LeadDetailPage() {
   const { login } = useParams<{ login: string }>();
   const { data: person, isLoading } = usePersonDetail(login || "");
   const { data: evidence } = usePersonEvidence(person?.id || "");
+
+  const handleDownloadCsv = () => {
+    if (!person) return;
+    const p = person.profile;
+    const rubric = evidence?.find(ev => ev.criterion === "shortlist_rubric");
+    const rd = rubric ? (rubric.evidence as any) : null;
+
+    const headers: string[] = [
+      "login", "name", "email", "location", "location_category", "company", "blog",
+      "followers", "public_repos", "overall_score", "shortlist_status", "review_status",
+      "assessment", "outreach_draft",
+      ...MUST_HAVE_KEYS.flatMap(k => [`mh_${k}_score`, `mh_${k}_evidence`]),
+      ...NICE_TO_HAVE_KEYS.flatMap(k => [`nth_${k}_score`, `nth_${k}_evidence`]),
+      "repos_evaluated",
+    ];
+
+    const v = (x: any) => escapeCsv(String(x ?? ""));
+    const row: string[] = [
+      v(person.login), v(p.name), v(p.email), v(p.location),
+      v(categorizeLocation(p.location)), v(p.company), v(p.blog),
+      v(p.followers), v(p.public_repos),
+      v((person.overall_score * 100).toFixed(1)),
+      v(person.shortlist_status), v(person.review_status),
+      v(rd?.assessment), v(rd?.outreach_draft),
+      ...MUST_HAVE_KEYS.flatMap(k => {
+        const e = rd?.must_haves?.[k];
+        return [v(e?.score != null ? (e.score * 100).toFixed(0) : ""), v(e?.evidence)];
+      }),
+      ...NICE_TO_HAVE_KEYS.flatMap(k => {
+        const e = rd?.nice_to_haves?.[k];
+        return [v(e?.score != null ? (e.score * 100).toFixed(0) : ""), v(e?.evidence)];
+      }),
+      v((rd?.repos_evaluated as string[] | undefined)?.join("; ")),
+    ];
+
+    const csv = headers.map(escapeCsv).join(",") + "\n" + row.join(",") + "\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${person.login}-candidate.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (isLoading) {
     return (
