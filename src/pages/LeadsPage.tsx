@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ExternalLink, Users, Star, Download, Mail } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
-import { categorizeLocation, extractLinkedIn, type LocationCategory } from "@/lib/categorizeLocation";
+import { categorizeLocation, type LocationCategory } from "@/lib/categorizeLocation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
