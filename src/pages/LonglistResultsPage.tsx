@@ -14,7 +14,7 @@ import {
 export default function LonglistResultsPage() {
   const [tierFilter, setTierFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "confidence">("score");
-  const { data: candidates, isLoading } = useLonglistCandidates(undefined, tierFilter || undefined);
+  const { data: candidates, isLoading } = useDynamicLonglist(tierFilter || undefined);
 
   const sorted = [...(candidates || [])].sort((a, b) =>
     sortBy === "score" ? b.pre_score - a.pre_score : b.pre_confidence - a.pre_confidence
