@@ -274,12 +274,37 @@ export default function LeadDetailPage() {
           );
         })()}
 
-        {/* Outreach Draft */}
+        {/* Email + Outreach Draft */}
         {(() => {
           const rubric = evidence?.find(ev => ev.criterion === "shortlist_rubric");
           const outreach = rubric ? (rubric.evidence as any)?.outreach_draft : null;
-          if (!outreach) return null;
-          return <OutreachCard text={outreach} />;
+          if (!outreach && !p.email) return null;
+          return (
+            <>
+              {p.email && (
+                <Card className="mb-6">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <a href={`mailto:${p.email}`} className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <Mail className="h-4 w-4" />
+                      {p.email}
+                    </a>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1.5 h-7 text-xs"
+                      onClick={() => {
+                        navigator.clipboard.writeText(p.email);
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                      Copy email
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+              {outreach && <OutreachCard text={outreach} />}
+            </>
+          );
         })()}
 
         {/* Rubric Breakdown */}

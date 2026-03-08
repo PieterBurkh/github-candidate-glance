@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ExternalLink, Users, Star, Download, Mail } from "lucide-react";
+import { ExternalLink, Star, Download } from "lucide-react";
 import { useLonglistCandidates } from "@/hooks/useLonglistPipeline";
 import { useShortlistEnrichment, useUpdateReviewStatus } from "@/hooks/useShortlistData";
 import { categorizeLocation, type LocationCategory } from "@/lib/categorizeLocation";
@@ -189,11 +189,8 @@ export default function LeadsPage() {
                   <TableHead>Candidate</TableHead>
                   <TableHead className="w-36">Review</TableHead>
                   <TableHead className="w-28">Location</TableHead>
-                  <TableHead className="w-20">Email</TableHead>
-                  
-                  <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Score</TableHead>
-                  <TableHead className="min-w-[280px]">Assessment</TableHead>
+                  <TableHead>Assessment</TableHead>
                   
                   <TableHead className="w-16" />
                 </TableRow>
@@ -255,26 +252,6 @@ export default function LeadsPage() {
                         <Badge variant="outline" className="text-[10px]">
                           {locCategory}
                         </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs" onClick={(e) => e.stopPropagation()}>
-                        {prof?.email ? (
-                          <a href={`mailto:${prof.email}`} className="text-muted-foreground hover:text-primary flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            <span className="truncate max-w-[100px]">{prof.email}</span>
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right text-sm">
-                        {h?.followers != null ? (
-                          <span className="flex items-center justify-end gap-1 text-muted-foreground">
-                            <Users className="h-3 w-3" />
-                            {h.followers.toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">–</span>
-                        )}
                       </TableCell>
                       <TableCell className="text-right text-sm font-medium">
                         {enrichment?.overall_score != null && enrichment.overall_score > 0 ? (
