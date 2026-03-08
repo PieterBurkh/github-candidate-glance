@@ -173,6 +173,7 @@ export default function LeadsPage() {
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Score</TableHead>
                   <TableHead className="min-w-[280px]">Assessment</TableHead>
+                  <TableHead className="min-w-[220px]">Outreach</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
