@@ -154,7 +154,7 @@ export default function LeadDetailPage() {
       <NavBar />
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <div className="flex items-center gap-2 mb-4">
-          <Link to="/">
+          <Link to="/shortlist">
             <Button variant="ghost" size="sm" className="gap-1.5">
               <ArrowLeft className="h-4 w-4" />
               Back
