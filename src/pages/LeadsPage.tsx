@@ -210,6 +210,9 @@ export default function LeadsPage() {
                   const enrichment = enrichmentMap[c.login];
                   const rubric = enrichment?.evidence?.find((e: any) => e.criterion === "shortlist_rubric")?.evidence as any;
                   const currentReview = enrichment?.review_status || "pending";
+                  const prof = enrichment?.profile || {} as any;
+                  const locCategory = categorizeLocation(prof?.location);
+                  const linkedIn = extractLinkedIn(prof);
 
                   return (
                     <TableRow key={c.id}>
