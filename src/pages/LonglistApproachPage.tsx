@@ -3,14 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 const SCORING_FACTORS = [
-  { factor: "React in languages/topics", points: "+20" },
-  { factor: "TypeScript in languages/topics", points: "+15" },
-  { factor: "Stars ≥ 100 on any repo", points: "+10" },
-  { factor: "Followers ≥ 200", points: "+10" },
-  { factor: "Pushed in last 6 months", points: "+10" },
-  { factor: "Repo size ≥ 500 KB", points: "+5" },
-  { factor: "Complexity keywords (graphql, websocket…)", points: "+5" },
-  { factor: "GitHub Pages enabled", points: "+5" },
+  { factor: "React / Next / Remix / Gatsby in topics", points: "+20", note: null },
+  { factor: "TypeScript language detected", points: "+15", note: "or JavaScript +10 if no TS" },
+  { factor: "Total stars ≥ 100", points: "+10", note: "or ≥ 20 → +5" },
+  { factor: "Followers ≥ 200", points: "+10", note: "or ≥ 50 → +5" },
+  { factor: "Pushed in last 6 months", points: "+5", note: null },
+  { factor: "3+ repos ≥ 500 KB", points: "+5", note: null },
+  { factor: "5+ non-fork repos", points: "+5", note: null },
+  { factor: "GitHub Pages enabled", points: "+2", note: null },
+  { factor: "Complex keywords (drag, editor, chart, xstate…)", points: "+3 each", note: "max +10" },
 ];
 
 export default function LonglistApproachPage() {
@@ -126,13 +127,16 @@ export default function LonglistApproachPage() {
                   key={s.factor}
                   className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
                 >
-                  <span className="text-muted-foreground">{s.factor}</span>
-                  <Badge variant="secondary" className="font-mono text-xs">{s.points}</Badge>
+                  <div className="flex flex-col">
+                    <span className="text-muted-foreground">{s.factor}</span>
+                    {s.note && <span className="text-xs text-muted-foreground/60">{s.note}</span>}
+                  </div>
+                  <Badge variant="secondary" className="font-mono text-xs shrink-0 ml-2">{s.points}</Badge>
                 </div>
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Scores are capped at 100. The maximum achievable score with all signals present is 80.
+              Scores are capped at 100. The theoretical maximum with all signals is ~97. Tiered criteria (e.g. stars, followers) award the higher value only — they don't stack.
             </p>
           </CardContent>
         </Card>
