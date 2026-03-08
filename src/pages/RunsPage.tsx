@@ -48,7 +48,9 @@ export default function RunsPage() {
   const startRun = useStartRun();
   const runEnrichment = useRunEnrichment();
   const resumeRun = useResumeRun();
+  const pauseRun = usePauseRun();
   const [showForm, setShowForm] = useState(false);
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
   const [perPage, setPerPage] = useState(100);
   const [maxPages, setMaxPages] = useState(10);
   const [selectedNets, setSelectedNets] = useState<string[]>(ALL_NETS.map((n) => n.id));
