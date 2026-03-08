@@ -55,6 +55,7 @@ function meetsLocationThreshold(score: number, location: LocationCategory): bool
 export default function LeadsPage() {
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
+  const navigate = useNavigate();
   
   const { data: candidates, isLoading } = useLonglistCandidates();
   const { enrichmentMap, isLoading: enrichLoading } = useShortlistEnrichment();
