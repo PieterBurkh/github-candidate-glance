@@ -21,55 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NavBar } from "@/components/NavBar";
-
-const CATEGORY_META: Record<string, { label: string; icon: any }> = {
-  architecture: { label: "Architecture", icon: LayoutDashboard },
-  type_safety: { label: "Type Safety", icon: Shield },
-  code_quality: { label: "Code Quality", icon: Code },
-  tooling: { label: "Tooling", icon: Wrench },
-  styling: { label: "Styling", icon: Palette },
-};
-
-function CategoryBreakdown({ categories }: { categories: Record<string, any> }) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {Object.entries(CATEGORY_META).map(([key, meta]) => {
-        const cat = categories?.[key];
-        if (!cat) return null;
-        const Icon = meta.icon;
-        return (
-          <Card key={key}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">{meta.label}</span>
-                <span className="ml-auto text-sm font-bold text-foreground">
-                  {(cat.score * 100).toFixed(0)}%
-                </span>
-              </div>
-              <Progress value={cat.score * 100} className="h-2 mb-3" />
-              {cat.evidence?.length > 0 && (
-                <div className="space-y-2">
-                  {cat.evidence.map((ev: any, idx: number) => (
-                    <div key={idx} className="text-xs border border-border rounded p-2 bg-muted/30">
-                      <p className="font-mono text-muted-foreground mb-1">{ev.file}</p>
-                      {ev.snippet && (
-                        <pre className="text-[10px] bg-muted p-1.5 rounded overflow-x-auto mb-1 text-foreground">
-                          {ev.snippet}
-                        </pre>
-                      )}
-                      <p className="text-muted-foreground">{ev.comment}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
+import { RubricBreakdown } from "@/components/RubricBreakdown";
 
 export default function LeadDetailPage() {
   const { login } = useParams<{ login: string }>();
