@@ -85,27 +85,6 @@ export function RunsContent() {
             <CardTitle className="text-lg">Configure Search</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4">
-              <div className="space-y-2">
-                <Label>Results Per Query</Label>
-                <Input
-                  type="number"
-                  value={perPage}
-                  onChange={(e) => setPerPage(Number(e.target.value))}
-                  className="w-32"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Max Pages</Label>
-                <Input
-                  type="number"
-                  value={maxPages}
-                  onChange={(e) => setMaxPages(Number(e.target.value))}
-                  className="w-32"
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label>Search Nets</Label>
               <p className="text-xs text-muted-foreground">
