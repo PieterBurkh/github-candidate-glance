@@ -4,13 +4,13 @@ import {
   ArrowLeft,
   ExternalLink,
   Globe,
-  Linkedin,
   Mail,
   MapPin,
   Building,
   Users,
   Copy,
   Check,
+  Download,
 } from "lucide-react";
 import { usePersonDetail, usePersonEvidence } from "@/hooks/useSignalPipeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
