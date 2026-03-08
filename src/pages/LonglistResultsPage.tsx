@@ -70,16 +70,11 @@ export default function LonglistResultsPage() {
 
   const isLoading = loadingCandidates || loadingEnrichment;
 
-  const summarizeAssessment = (login: string): string => {
+  const getAssessment = (login: string): string => {
     const entry = enrichmentMap[login];
-    if (!entry || !entry.evidence || entry.evidence.length === 0) return "";
-    // Collect top criteria with scores
-    const top = [...entry.evidence]
-      .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, 3)
-      .map((ev: any) => `${ev.criterion}: ${Math.round((ev.score ?? 0) * 100)}%`)
-      .join(", ");
-    return top;
+    if (!entry?.evidence) return "";
+    const rubric = entry.evidence.find((ev: any) => ev.criterion === "shortlist_rubric");
+    return (rubric?.evidence as any)?.assessment || "";
   };
 
   return (
