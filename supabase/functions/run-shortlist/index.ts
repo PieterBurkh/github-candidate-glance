@@ -137,9 +137,8 @@ async function processShortlist(shortlistRunId: string) {
     }
 
     // Update progress after each batch
-    const stats = await getStats(sb);
     await sb.from("shortlist_runs").update({
-      progress: { ...stats, total: totalCandidates, enriched: processedLogins.size + enriched, failed },
+      progress: { total: totalCandidates, enriched: processedLogins.size + enriched, failed },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
 
