@@ -232,11 +232,26 @@ export default function LeadDetailPage() {
                 </div>
               </div>
 
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <p className="text-3xl font-bold text-foreground">
                   {(person.overall_score * 100).toFixed(0)}%
                 </p>
                 <p className="text-xs text-muted-foreground">Overall</p>
+                <Select
+                  value={person.review_status || "pending"}
+                  onValueChange={(val) => updateReview.mutate({ login: person.login, status: val })}
+                >
+                  <SelectTrigger className="h-7 w-[120px] text-xs border-0 bg-transparent px-0 focus:ring-0">
+                    <Badge variant={reviewBadgeVariant(person.review_status || "pending")} className="text-[10px]">
+                      {reviewLabel(person.review_status || "pending")}
+                    </Badge>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {REVIEW_OPTIONS.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </CardContent>
