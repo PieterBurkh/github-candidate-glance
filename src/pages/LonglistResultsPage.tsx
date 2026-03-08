@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useDynamicLonglist } from "@/hooks/useLonglistPipeline";
+import { useShortlistEnrichment } from "@/hooks/useShortlistData";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { NavBar } from "@/components/NavBar";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -10,33 +12,74 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
+const MIN_UNSORTED = 200;
+const SCORE_THRESHOLD = 70;
+
+type FilterMode = "all" | "sorted" | "unsorted";
+
 export default function LonglistResultsPage() {
-  const [sortBy, setSortBy] = useState<"score" | "confidence">("score");
-  const { data: candidates, isLoading } = useDynamicLonglist();
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const { data: allCandidates, isLoading: loadingCandidates } = useDynamicLonglist();
+  const { enrichmentMap, isLoading: loadingEnrichment } = useShortlistEnrichment();
 
-  const sorted = [...(candidates || [])].sort((a, b) =>
-    sortBy === "score" ? b.pre_score - a.pre_score : b.pre_confidence - a.pre_confidence
-  );
+  const { display, sortedCount, unsortedCount } = useMemo(() => {
+    if (!allCandidates) return { display: [], sortedCount: 0, unsortedCount: 0 };
 
-  const summarizeSignals = (repoSignals: any) => {
-    if (!repoSignals || typeof repoSignals !== "object") return "";
-    const allLibs = new Set<string>();
-    let hasCI = false;
-    let hasTests = false;
-    let hasStorybook = false;
-    for (const sig of Object.values(repoSignals) as any[]) {
-      (sig.complex_libs || []).forEach((l: string) => allLibs.add(l));
-      (sig.testing || []).forEach((l: string) => allLibs.add(l));
-      if (sig.has_ci) hasCI = true;
-      if (sig.has_tests_dir) hasTests = true;
-      if (sig.storybook) hasStorybook = true;
+    const sorted: typeof allCandidates = [];
+    const unsortedAll: typeof allCandidates = [];
+
+    for (const c of allCandidates) {
+      if (enrichmentMap[c.login]) {
+        sorted.push(c);
+      } else {
+        unsortedAll.push(c);
+      }
     }
-    const parts: string[] = [];
-    if (hasCI) parts.push("CI");
-    if (hasTests) parts.push("Tests");
-    if (hasStorybook) parts.push("Storybook");
-    if (allLibs.size > 0) parts.push(...[...allLibs].slice(0, 3));
-    return parts.join(", ");
+
+    // unsortedAll is already sorted by pre_score desc (from hook)
+    // Take all >= threshold, then fill to MIN_UNSORTED
+    let unsortedSelected: typeof allCandidates;
+    const aboveThreshold = unsortedAll.filter(c => c.pre_score >= SCORE_THRESHOLD);
+    if (aboveThreshold.length >= MIN_UNSORTED) {
+      unsortedSelected = aboveThreshold;
+    } else {
+      unsortedSelected = unsortedAll.slice(0, Math.max(MIN_UNSORTED, aboveThreshold.length));
+    }
+
+    // Sort: sorted first (by shortlist score desc), then unsorted (by pre_score desc)
+    const sortedGroup = [...sorted].sort((a, b) => {
+      const sa = enrichmentMap[a.login]?.overall_score ?? 0;
+      const sb = enrichmentMap[b.login]?.overall_score ?? 0;
+      return sb - sa;
+    });
+
+    const merged = [...sortedGroup, ...unsortedSelected];
+
+    return {
+      display: merged,
+      sortedCount: sorted.length,
+      unsortedCount: unsortedSelected.length,
+    };
+  }, [allCandidates, enrichmentMap]);
+
+  const filtered = useMemo(() => {
+    if (filterMode === "all") return display;
+    if (filterMode === "sorted") return display.filter(c => !!enrichmentMap[c.login]);
+    return display.filter(c => !enrichmentMap[c.login]);
+  }, [display, filterMode, enrichmentMap]);
+
+  const isLoading = loadingCandidates || loadingEnrichment;
+
+  const summarizeAssessment = (login: string): string => {
+    const entry = enrichmentMap[login];
+    if (!entry || !entry.evidence || entry.evidence.length === 0) return "";
+    // Collect top criteria with scores
+    const top = [...entry.evidence]
+      .sort((a: any, b: any) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, 3)
+      .map((ev: any) => `${ev.criterion}: ${Math.round((ev.score ?? 0) * 100)}%`)
+      .join(", ");
+    return top;
   };
 
   return (
@@ -47,17 +90,18 @@ export default function LonglistResultsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Longlist</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {sorted.length} candidates scoring 70–82
+              {sortedCount} sorted · {unsortedCount} unsorted
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
+            <Select value={filterMode} onValueChange={(v) => setFilterMode(v as FilterMode)}>
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="score">Sort by Score</SelectItem>
-                <SelectItem value="confidence">Sort by Confidence</SelectItem>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="sorted">Sorted</SelectItem>
+                <SelectItem value="unsorted">Unsorted</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -65,21 +109,23 @@ export default function LonglistResultsPage() {
 
         {isLoading ? (
           <div className="text-center py-16 text-muted-foreground text-sm">Loading…</div>
-        ) : sorted.length > 0 ? (
+        ) : filtered.length > 0 ? (
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Login</TableHead>
-                  <TableHead className="w-20 text-right">Score</TableHead>
-                  <TableHead className="w-24 text-right">Confidence</TableHead>
-                  <TableHead>Key Signals</TableHead>
+                  <TableHead className="w-20 text-center">Sorted</TableHead>
+                  <TableHead className="w-28 text-right">Shortlist Score</TableHead>
+                  <TableHead>Assessment</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sorted.map((c) => {
+                {filtered.map((c) => {
                   const hydration = c.hydration as any;
+                  const enrichment = enrichmentMap[c.login];
+                  const isSorted = !!enrichment;
                   return (
                     <TableRow key={c.id}>
                       <TableCell>
@@ -95,10 +141,16 @@ export default function LonglistResultsPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{Math.round(c.pre_confidence * 100)}%</TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {summarizeSignals(c.repo_signals)}
+                      <TableCell className="text-center">
+                        <Badge variant={isSorted ? "default" : "secondary"} className="text-xs">
+                          {isSorted ? "Yes" : "No"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono text-sm">
+                        {isSorted ? `${Math.round(enrichment.overall_score * 100)}%` : "–"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate">
+                        {isSorted ? summarizeAssessment(c.login) : "–"}
                       </TableCell>
                       <TableCell>
                         {hydration?.html_url && (
