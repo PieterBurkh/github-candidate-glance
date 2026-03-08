@@ -260,6 +260,13 @@ export default function LeadsPage() {
                           <span className="text-muted-foreground">–</span>
                         )}
                       </TableCell>
+                      <TableCell className="text-right text-sm font-medium">
+                        {enrichment?.overall_score != null && enrichment.overall_score > 0 ? (
+                          <span>{Math.round(enrichment.overall_score)}%</span>
+                        ) : (
+                          <span className="text-muted-foreground">–</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {rubric?.assessment ? (
                           <Tooltip>
