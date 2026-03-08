@@ -275,9 +275,6 @@ async function processLonglist(longlistRunId: string) {
         if (u.repo_signals) payload.repo_signals = u.repo_signals;
         if (u.pre_score !== undefined) payload.pre_score = u.pre_score;
         if (u.pre_confidence !== undefined) payload.pre_confidence = u.pre_confidence;
-        if (u.stage === "scored" && (u.pre_score || 0) >= INLINE_EXPLOIT_THRESHOLD) {
-          payload.selection_tier = "exploit";
-        }
         return sb.from("longlist_candidates").update(payload).eq("id", u.id);
       }));
 
