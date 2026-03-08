@@ -65,7 +65,7 @@ export default function LeadsPage() {
 
   const downloadCsv = useCallback(() => {
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const headers = ["rank","login","name","pre_score","tier","status","review_status","followers","repos","enriched_score","assessment"];
+    const headers = ["rank","login","name","pre_score","tier","status","review_status","followers","repos","enriched_score","assessment","outreach_draft"];
     const rows = sorted.map((c, idx) => {
       const h = c.hydration as any;
       const e = enrichmentMap[c.login];
@@ -82,6 +82,7 @@ export default function LeadsPage() {
         h?.public_repos ?? "",
         e ? e.overall_score : "",
         escape(rubric?.assessment || ""),
+        escape(rubric?.outreach_draft || ""),
       ].join(",");
     });
     const csv = [headers.join(","), ...rows].join("\n");
