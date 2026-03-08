@@ -40,11 +40,3 @@ export function categorizeLocation(location: string | null | undefined): Locatio
   return "Rest of World";
 }
 
-export function extractLinkedIn(profile: any): string | null {
-  const fields = [profile?.blog, profile?.bio].filter(Boolean);
-  for (const field of fields) {
-    const match = field.match(/https?:\/\/(?:www\.)?linkedin\.com\/in\/[^\s),]+/i);
-    if (match) return match[0];
-  }
-  return null;
-}

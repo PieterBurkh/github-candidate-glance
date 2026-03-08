@@ -291,16 +291,6 @@ export default function LeadsPage() {
                           <span className="text-muted-foreground">N/A</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-xs">
-                        {linkedIn ? (
-                          <a href={linkedIn} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary flex items-center gap-1">
-                            <Linkedin className="h-3 w-3" />
-                            <span>Profile</span>
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground">N/A</span>
-                        )}
-                      </TableCell>
                       <TableCell className="text-right text-sm">
                         {h?.followers != null ? (
                           <span className="flex items-center justify-end gap-1 text-muted-foreground">
