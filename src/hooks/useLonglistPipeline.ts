@@ -127,8 +127,9 @@ export function useDynamicLonglist() {
       const query = supabase
         .from("longlist_candidates")
         .select("*")
+        .eq("stage", "scored")
         .gte("pre_score", 70)
-        .or('discard_reason.is.null,and(discard_reason.not.in.("organization","not_found","no_repos"))')
+        .lte("pre_score", 82)
         .order("pre_score", { ascending: false });
 
       const allScored = await fetchAllRows<LonglistCandidate>((from, to) =>

@@ -282,93 +282,28 @@ async function processLonglist(longlistRunId: string) {
     }
   }
 
-  // ─── Selection stage (global trigger) ───
+  // ─── Check if this run is done ───
   const { count: remaining } = await sb
     .from("longlist_candidates").select("id", { count: "exact", head: true })
-    .eq("longlist_run_id", longlistRunId).in("stage", ["pending", "hydrated"]);
+    .eq("longlist_run_id", longlistRunId).eq("stage", "pending");
 
   if (remaining === 0 && !rateLimited && !timedOut()) {
-    // Check if ALL candidates across ALL runs are processed
-    const { count: globalPending } = await sb
-      .from("longlist_candidates").select("id", { count: "exact", head: true })
-      .in("stage", ["pending", "hydrated"]);
-
-    if (globalPending === 0) {
-      // Stage 3: Global selection across all runs
-      // Count how many exploit candidates were already assigned inline across all runs
-      const { count: inlineExploitCount } = await sb
-        .from("longlist_candidates").select("id", { count: "exact", head: true })
-        .eq("selection_tier", "exploit");
-
-      const exploitSlots = Math.max(0, 800 - (inlineExploitCount || 0));
-
-      // Get scored candidates without a selection_tier across ALL runs, ordered by score
-      const { data: unassigned } = await sb
-        .from("longlist_candidates").select("id, pre_score, pre_confidence, repo_signals")
-        .eq("stage", "scored").is("selection_tier", null)
-        .order("pre_score", { ascending: false }).range(0, 9999);
-
-      if (unassigned && unassigned.length > 0) {
-        // Fill remaining exploit slots
-        if (exploitSlots > 0) {
-          const fillExploitIds = unassigned.slice(0, exploitSlots).map((c) => c.id);
-          for (let i = 0; i < fillExploitIds.length; i += 500) {
-            await sb.from("longlist_candidates")
-              .update({ selection_tier: "exploit", updated_at: new Date().toISOString() })
-              .in("id", fillExploitIds.slice(i, i + 500));
-          }
-        }
-
-        // Explore tier from remaining unassigned
-        const afterExploit = unassigned.slice(exploitSlots);
-        const exploreCandidates = afterExploit
-          .filter((c) => {
-            const sigs = c.repo_signals as Record<string, any>;
-            return Object.values(sigs).reduce((sum: number, s: any) =>
-              sum + (s.framework_topics?.length || 0) + (s.complex_keywords?.length || 0) + (s.recent_activity ? 1 : 0), 0) >= 2;
-          }).slice(0, 200);
-
-        if (exploreCandidates.length > 0) {
-          const exploreIds = exploreCandidates.map((c) => c.id);
-          for (let i = 0; i < exploreIds.length; i += 500) {
-            await sb.from("longlist_candidates")
-              .update({ selection_tier: "explore", updated_at: new Date().toISOString() })
-              .in("id", exploreIds.slice(i, i + 500));
-          }
-        }
-
-        // Leave remaining scored candidates as-is (no selection_tier)
-        // Client-side dynamic selection handles ranking
-      }
-
-      console.log(`Global Stage 3: ${inlineExploitCount} inline exploit + ${exploitSlots} slots filled`);
-
-      // Global stats
-      const { count: globalTotal } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true });
-      const { count: globalSelected } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).not("selection_tier", "is", null);
-      const { count: globalDiscarded } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("stage", "discarded");
-
-      await sb.from("longlist_runs").update({
-        status: "done",
-        progress: { stage: "done", total: globalTotal, selected: globalSelected, discarded: globalDiscarded },
-        updated_at: new Date().toISOString(),
-      }).eq("id", longlistRunId);
-
-      console.log(`Longlist run ${longlistRunId} triggered global Stage 3: ${globalSelected} selected / ${globalTotal} total`);
-      return;
-    }
-
-    // Current run is done but global pool still has pending — mark this run done without Stage 3
+    // All candidates in this run processed — compute final stats
     const { count: runTotal } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId);
     const { count: runScored } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId).eq("stage", "scored");
+    const { count: runDiscarded } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true }).eq("longlist_run_id", longlistRunId).eq("stage", "discarded");
+
+    // Global selected = all candidates across all runs with pre_score 70–82
+    const { count: globalSelected } = await sb.from("longlist_candidates").select("id", { count: "exact", head: true })
+      .eq("stage", "scored").gte("pre_score", 70).lte("pre_score", 82);
 
     await sb.from("longlist_runs").update({
       status: "done",
-      progress: { stage: "done_awaiting_selection", total: runTotal, scored: runScored, globalPending: globalPending },
+      progress: { stage: "done", total: runTotal, scored: runScored, discarded: runDiscarded, selected: globalSelected },
       updated_at: new Date().toISOString(),
     }).eq("id", longlistRunId);
 
-    console.log(`Longlist run ${longlistRunId} done (awaiting global Stage 3, ${globalPending} still pending globally)`);
+    console.log(`Longlist run ${longlistRunId} done: ${runTotal} total, ${runScored} scored, ${runDiscarded} discarded, ${globalSelected} globally selected (score 70-82)`);
     return;
   }
 
