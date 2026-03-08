@@ -53,6 +53,10 @@ export default function LeadsPage() {
     if (!e) return false;
     if (statusFilter && e.shortlist_status !== statusFilter) return false;
     if (reviewFilter && e.review_status !== reviewFilter) return false;
+    if (locationFilter) {
+      const loc = categorizeLocation(e.profile?.location);
+      if (loc !== locationFilter) return false;
+    }
     return true;
   });
 
