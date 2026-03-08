@@ -77,7 +77,6 @@ export default function LeadsPage() {
       const e = enrichmentMap[c.login];
       const prof = e?.profile || {};
       const rubric = e?.evidence?.find((ev: any) => ev.criterion === "shortlist_rubric")?.evidence as any;
-      const linkedIn = extractLinkedIn(prof);
       return [
         idx + 1,
         c.login,
@@ -89,7 +88,6 @@ export default function LeadsPage() {
         escape(prof.location || ""),
         categorizeLocation(prof.location),
         prof.email || "",
-        linkedIn || "",
         h?.followers ?? "",
         h?.public_repos ?? "",
         e ? e.overall_score : "",
