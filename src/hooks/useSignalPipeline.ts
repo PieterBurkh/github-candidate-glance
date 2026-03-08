@@ -64,6 +64,8 @@ export interface Person {
     location?: string;
   };
   overall_score: number;
+  review_status: string;
+  shortlist_status: string | null;
   created_at: string;
   updated_at: string;
 }
