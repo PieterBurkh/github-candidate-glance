@@ -59,11 +59,9 @@ export default function LeadsPage() {
   });
 
   const sorted = [...enrichedOnly].sort((a, b) => {
-    if (sortBy === "enriched") {
-      const eA = enrichmentMap[a.login]?.overall_score ?? -1;
-      const eB = enrichmentMap[b.login]?.overall_score ?? -1;
-      if (eA !== eB) return eB - eA;
-    }
+    const eA = enrichmentMap[a.login]?.overall_score ?? -1;
+    const eB = enrichmentMap[b.login]?.overall_score ?? -1;
+    if (eA !== eB) return eB - eA;
     return b.pre_score - a.pre_score;
   });
 
