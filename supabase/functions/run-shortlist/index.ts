@@ -70,11 +70,9 @@ async function processShortlist(shortlistRunId: string) {
   console.log(`Shortlist run ${shortlistRunId}: ${totalCandidates} total, ${processedLogins.size} already done, ${pendingLogins.length} pending`);
 
   if (pendingLogins.length === 0) {
-    // All done — compute final stats
-    const stats = await getStats(sb);
     await sb.from("shortlist_runs").update({
       status: "done",
-      progress: { ...stats, total: totalCandidates },
+      progress: { total: totalCandidates, enriched: totalCandidates },
       updated_at: new Date().toISOString(),
     }).eq("id", shortlistRunId);
     return;
