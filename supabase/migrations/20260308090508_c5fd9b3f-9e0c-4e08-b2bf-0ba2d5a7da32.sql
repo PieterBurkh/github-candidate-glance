@@ -1,0 +1,1 @@
+ALTER TABLE public.people ADD COLUMN review_status text NOT NULL DEFAULT 'pending';
