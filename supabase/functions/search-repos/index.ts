@@ -410,6 +410,11 @@ serve(async (req) => {
               const q = `${query} stars:${band}`;
               const url = `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&sort=${sort}&order=desc&per_page=${perPage}&page=${page}`;
 
+              // Proactive rate-limit pacing: 2s between calls ≈ 30 req/min
+              if (queryCount > 0) {
+                await new Promise((r) => setTimeout(r, 2000));
+              }
+
               const res = await githubFetch(url);
               queryCount++;
 
