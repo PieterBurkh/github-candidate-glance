@@ -38,8 +38,21 @@ function reviewLabel(status: string) {
   return REVIEW_OPTIONS.find(o => o.value === status)?.label ?? "Pending";
 }
 
+function meetsLocationThreshold(score: number, location: LocationCategory): boolean {
+  switch (location) {
+    case "Germany":
+    case "UK":
+      return score > 50;
+    case "Rest of Europe":
+      return score > 65;
+    case "Rest of World":
+      return score > 80;
+    default: // N/A
+      return false;
+  }
+}
+
 export default function LeadsPage() {
-  const [tierFilter, setTierFilter] = useState<string>("");
   const [reviewFilter, setReviewFilter] = useState<string>("");
   const [locationFilter, setLocationFilter] = useState<string>("");
   
@@ -50,11 +63,13 @@ export default function LeadsPage() {
   const enrichedOnly = (candidates || []).filter(c => {
     const e = enrichmentMap[c.login];
     if (!e) return false;
+    
+    // Apply location-based score threshold
+    const loc = categorizeLocation(e.profile?.location);
+    if (!meetsLocationThreshold(e.overall_score ?? 0, loc)) return false;
+    
     if (reviewFilter && e.review_status !== reviewFilter) return false;
-    if (locationFilter) {
-      const loc = categorizeLocation(e.profile?.location);
-      if (loc !== locationFilter) return false;
-    }
+    if (locationFilter && loc !== locationFilter) return false;
     return true;
   });
 
