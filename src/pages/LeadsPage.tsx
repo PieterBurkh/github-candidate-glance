@@ -211,7 +211,7 @@ export default function LeadsPage() {
                   const currentReview = enrichment?.review_status || "pending";
                   const prof = enrichment?.profile || {} as any;
                   const locCategory = categorizeLocation(prof?.location);
-                  const linkedIn = extractLinkedIn(prof);
+                  
 
                   return (
                     <TableRow key={c.id}>
