@@ -13,7 +13,7 @@ import {
   Pause,
   AlertTriangle,
 } from "lucide-react";
-import { useRuns, useStartRun, useRunEnrichment, useResumeRun } from "@/hooks/useSignalPipeline";
+import { useRuns, useStartRun, useRunEnrichment, useResumeRun, usePauseRun } from "@/hooks/useSignalPipeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
