@@ -14,12 +14,10 @@ const SCORING_FACTORS = [
   { factor: "Complex keywords (drag, editor, chart, xstate…)", points: "+3 each", note: "max +10" },
 ];
 
-export default function LonglistApproachPage() {
+export function LonglistApproachContent() {
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Longlist Approach</h1>
+    <div className="mx-auto max-w-4xl py-8">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Longlist Approach</h1>
         <p className="text-muted-foreground mb-8">
           How we transform the Initial List into a ranked Longlist — deterministically, at scale.
         </p>
