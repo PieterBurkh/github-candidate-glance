@@ -1,5 +1,5 @@
-import { Link } from "react-router-dom";
-import { ArrowLeft, MapPin, Building, Clock, Briefcase, ExternalLink } from "lucide-react";
+import { MapPin, Building, Clock, Briefcase, ExternalLink } from "lucide-react";
+import { NavBar } from "@/components/NavBar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,15 +8,9 @@ import { Separator } from "@/components/ui/separator";
 const JobDescription = () => {
   return (
     <div className="min-h-screen bg-background">
+      <NavBar />
       <header className="border-b border-border bg-card">
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
-          <Link
-            to="/"
-            className="mb-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             Senior Frontend Engineer
           </h1>
