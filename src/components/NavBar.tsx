@@ -3,12 +3,12 @@ import { cn } from "@/lib/utils";
 import { FileText, Search, Users, List, ListFilter, BookOpen, Filter } from "lucide-react";
 
 const links = [
-  { to: "/", label: "Initial list runs", icon: Search },
-  { to: "/longlist", label: "Initial list", icon: List },
-  { to: "/longlist-runs", label: "Longlist runs", icon: Filter },
-  { to: "/longlist-results", label: "Longlist", icon: Users },
-  { to: "/shortlist-runs", label: "Shortlist runs", icon: Filter },
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
+  { to: "/shortlist-runs", label: "Shortlist runs", icon: Filter },
+  { to: "/longlist-results", label: "Longlist", icon: Users },
+  { to: "/longlist-runs", label: "Longlist runs", icon: Filter },
+  { to: "/longlist", label: "Initial list", icon: List },
+  { to: "/", label: "Initial list runs", icon: Search },
   { to: "/approach", label: "Initial list approach", icon: BookOpen },
   { to: "/longlist-approach", label: "Longlist approach", icon: BookOpen },
   { to: "/shortlist-approach", label: "Shortlist approach", icon: BookOpen },
@@ -22,7 +22,7 @@ export function NavBar() {
     <header className="border-b border-border bg-card">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 flex items-center h-14 gap-6">
         <Link to="/" className="font-bold text-foreground text-sm tracking-tight">
-          Signal Scanner
+          Hiring Tool
         </Link>
         <nav className="flex items-center gap-1">
           {links.map(({ to, label, icon: Icon }) => {
