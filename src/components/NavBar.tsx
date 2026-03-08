@@ -1,14 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { FileText, Search, Users, List, ListFilter, BookOpen, Filter } from "lucide-react";
+import { FileText, Search, Users, List, ListFilter, BookOpen } from "lucide-react";
 
 const links = [
   { to: "/shortlist", label: "Shortlist", icon: ListFilter },
-  { to: "/shortlist-runs", label: "Shortlist runs", icon: Filter },
   { to: "/longlist-results", label: "Longlist", icon: Users },
-  { to: "/longlist-runs", label: "Longlist runs", icon: Filter },
   { to: "/longlist", label: "Initial list", icon: List },
-  { to: "/", label: "Initial list runs", icon: Search },
+  { to: "/sourcing", label: "Sourcing", icon: Search },
   { to: "/approach", label: "Initial list approach", icon: BookOpen },
   { to: "/longlist-approach", label: "Longlist approach", icon: BookOpen },
   { to: "/shortlist-approach", label: "Shortlist approach", icon: BookOpen },
@@ -26,10 +24,7 @@ export function NavBar() {
         </Link>
         <nav className="flex items-center gap-1">
           {links.map(({ to, label, icon: Icon }) => {
-            const isActive =
-              to === "/"
-                ? location.pathname === "/" || location.pathname.startsWith("/runs")
-                : location.pathname.startsWith(to);
+            const isActive = location.pathname.startsWith(to);
             return (
               <Link
                 key={to}

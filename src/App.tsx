@@ -2,19 +2,17 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import RunsPage from "./pages/RunsPage";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import SourcingPage from "./pages/SourcingPage";
 import LeadsPage from "./pages/LeadsPage";
 import LeadDetailPage from "./pages/LeadDetailPage";
 import JobDescription from "./pages/JobDescription";
 import LonglistPage from "./pages/LonglistPage";
 import GlobalLonglistPage from "./pages/GlobalLonglistPage";
-import LonglistRunsPage from "./pages/LonglistRunsPage";
 import LonglistResultsPage from "./pages/LonglistResultsPage";
 import ApproachPage from "./pages/ApproachPage";
 import LonglistApproachPage from "./pages/LonglistApproachPage";
 import ShortlistApproachPage from "./pages/ShortlistApproachPage";
-import ShortlistRunsPage from "./pages/ShortlistRunsPage";
 
 import NotFound from "./pages/NotFound";
 
@@ -27,13 +25,11 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<RunsPage />} />
-          
+          <Route path="/" element={<Navigate to="/sourcing" replace />} />
+          <Route path="/sourcing" element={<SourcingPage />} />
           <Route path="/longlist" element={<GlobalLonglistPage />} />
-          <Route path="/longlist-runs" element={<LonglistRunsPage />} />
           <Route path="/longlist-results" element={<LonglistResultsPage />} />
           <Route path="/shortlist" element={<LeadsPage />} />
-          <Route path="/shortlist-runs" element={<ShortlistRunsPage />} />
           <Route path="/shortlist-approach" element={<ShortlistApproachPage />} />
           <Route path="/approach" element={<ApproachPage />} />
           <Route path="/longlist-approach" element={<LonglistApproachPage />} />
