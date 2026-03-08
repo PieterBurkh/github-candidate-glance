@@ -91,8 +91,8 @@ export function ShortlistApproachContent() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              A single <strong className="text-foreground">Gemini call per candidate</strong> evaluates all 12 criteria
-              using a structured tool_call response. Each sub-criterion is scored on a 5-point scale:
+              A single <strong className="text-foreground">Gemini call per candidate</strong> evaluates all 10 criteria
+              using a structured tool_call response. Each criterion is scored on a 5-point scale:
             </p>
             <div className="grid grid-cols-5 gap-2 mt-2">
               {[
