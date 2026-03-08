@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ExternalLink } from "lucide-react";
 import { useDynamicLonglist } from "@/hooks/useLonglistPipeline";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { NavBar } from "@/components/NavBar";
 import {
@@ -12,9 +11,8 @@ import {
 } from "@/components/ui/select";
 
 export default function LonglistResultsPage() {
-  const [tierFilter, setTierFilter] = useState<string>("");
   const [sortBy, setSortBy] = useState<"score" | "confidence">("score");
-  const { data: candidates, isLoading } = useDynamicLonglist(tierFilter || undefined);
+  const { data: candidates, isLoading } = useDynamicLonglist();
 
   const sorted = [...(candidates || [])].sort((a, b) =>
     sortBy === "score" ? b.pre_score - a.pre_score : b.pre_confidence - a.pre_confidence
@@ -53,16 +51,6 @@ export default function LonglistResultsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Select value={tierFilter || "all"} onValueChange={(v) => setTierFilter(v === "all" ? "" : v)}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="All tiers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All tiers</SelectItem>
-                <SelectItem value="exploit">Exploit</SelectItem>
-                <SelectItem value="explore">Explore</SelectItem>
-              </SelectContent>
-            </Select>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
               <SelectTrigger className="w-36">
                 <SelectValue />
@@ -85,7 +73,6 @@ export default function LonglistResultsPage() {
                   <TableHead>Login</TableHead>
                   <TableHead className="w-20 text-right">Score</TableHead>
                   <TableHead className="w-24 text-right">Confidence</TableHead>
-                  <TableHead className="w-24">Tier</TableHead>
                   <TableHead>Key Signals</TableHead>
                   <TableHead className="w-16" />
                 </TableRow>
@@ -110,11 +97,6 @@ export default function LonglistResultsPage() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{c.pre_score}</TableCell>
                       <TableCell className="text-right font-mono text-sm">{Math.round(c.pre_confidence * 100)}%</TableCell>
-                      <TableCell>
-                        <Badge variant={c.computed_tier === "exploit" ? "default" : "secondary"} className="text-[10px]">
-                          {c.computed_tier}
-                        </Badge>
-                      </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                         {summarizeSignals(c.repo_signals)}
                       </TableCell>
