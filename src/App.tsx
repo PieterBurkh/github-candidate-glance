@@ -28,9 +28,7 @@ const App = () => (
           <Route path="/longlist" element={<GlobalLonglistPage />} />
           <Route path="/longlist-results" element={<LonglistResultsPage />} />
           <Route path="/shortlist" element={<LeadsPage />} />
-          <Route path="/shortlist-approach" element={<ShortlistApproachPage />} />
-          <Route path="/approach" element={<ApproachPage />} />
-          <Route path="/longlist-approach" element={<LonglistApproachPage />} />
+          <Route path="/approach" element={<ApproachOverviewPage />} />
           <Route path="/runs/:runId/longlist" element={<LonglistPage />} />
           <Route path="/runs/:runId/leads" element={<LeadsPage />} />
           <Route path="/leads/:login" element={<LeadDetailPage />} />

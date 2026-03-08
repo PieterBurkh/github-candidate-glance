@@ -171,7 +171,15 @@ export function LonglistApproachContent() {
             </p>
           </CardContent>
         </Card>
-      </div>
+    </div>
+  );
+}
+
+export default function LonglistApproachPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <LonglistApproachContent />
     </div>
   );
 }

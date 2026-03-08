@@ -212,7 +212,15 @@ export function ShortlistApproachContent() {
             </ul>
           </CardContent>
         </Card>
-      </div>
+    </div>
+  );
+}
+
+export default function ShortlistApproachPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <ShortlistApproachContent />
     </div>
   );
 }

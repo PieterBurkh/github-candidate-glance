@@ -93,8 +93,16 @@ export function ApproachContent() {
               across all their repos. The top candidates form the shortlist for outreach.
             </p>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
+    </div>
+  );
+}
+
+export default function ApproachPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <ApproachContent />
     </div>
   );
 }
