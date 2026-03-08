@@ -142,7 +142,7 @@ export default function LonglistResultsPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
-                        {isSorted ? `${Math.round(enrichment.overall_score * 100)}%` : "–"}
+                        {isSorted ? Math.round(enrichment.overall_score) : "–"}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[280px] truncate">
                         {isSorted ? summarizeAssessment(c.login) : "–"}
