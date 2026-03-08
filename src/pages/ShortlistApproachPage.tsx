@@ -178,23 +178,16 @@ export function ShortlistApproachContent() {
             <CardTitle className="text-lg">Scoring Formula &amp; Decision Rules</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <div className="rounded-md bg-muted p-4 font-mono text-xs">
-              overall_pct = round(100 × (0.80 × must_haves_avg + 0.20 × nice_haves_avg))
+            <div className="rounded-md bg-muted p-4 font-mono text-xs space-y-1">
+              <div>must_haves_weighted = (react_ts×2.0 + architecture×2.0 + perf×1.5 + docs×1.0) / 6.5</div>
+              <div>nice_haves_avg = simple average of 6 nice-to-have scores</div>
+              <div>overall_pct = round(100 × (0.80 × must_haves_weighted + 0.20 × nice_haves_avg))</div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-3 mt-3">
-              <div className="rounded-md border border-border p-3">
-                <Badge className="text-[10px] mb-1.5">SHORTLIST</Badge>
-                <p className="text-xs">overall_pct ≥ 65 AND must_haves_avg ≥ 0.60</p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <Badge variant="secondary" className="text-[10px] mb-1.5">NEEDS REVIEW</Badge>
-                <p className="text-xs">overall_pct ≥ 65 AND must_haves_avg &lt; 0.60</p>
-              </div>
-              <div className="rounded-md border border-border p-3">
-                <Badge variant="outline" className="text-[10px] mb-1.5">NO</Badge>
-                <p className="text-xs">overall_pct &lt; 65</p>
-              </div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              The resulting <code className="bg-muted px-1 rounded text-xs">overall_pct</code> is stored as the candidate's
+              final score. Higher scores indicate stronger alignment with the rubric. No automated accept/reject
+              thresholds are applied — the score and per-criterion evidence are provided for manual review.
+            </p>
           </CardContent>
         </Card>
 

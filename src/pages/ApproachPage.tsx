@@ -84,13 +84,14 @@ export function ApproachContent() {
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>
-              <strong className="text-foreground">Enrichment:</strong> Each repo is analysed by an LLM against
-              scoring criteria (code quality, contribution patterns, complexity of work). This produces
-              per-repo signal scores and links the repo's owner to a <em>Person</em> record.
+              <strong className="text-foreground">Longlist:</strong> Every unique repo owner is extracted,
+              hydrated with GitHub profile metadata, and scored deterministically (0–100) using heuristics
+              like star count, language, activity, and topic signals. Candidates scoring 70–82 proceed.
             </p>
             <p>
-              <strong className="text-foreground">Shortlist:</strong> People are ranked by aggregated scores
-              across all their repos. The top candidates form the shortlist for outreach.
+              <strong className="text-foreground">Shortlist:</strong> Selected candidates are evaluated by
+              an LLM against a weighted rubric of 10 criteria (4 must-haves + 6 nice-to-haves). This produces
+              a final <code className="bg-muted px-1 rounded text-xs">overall_pct</code> score with per-criterion evidence.
             </p>
           </CardContent>
       </Card>
