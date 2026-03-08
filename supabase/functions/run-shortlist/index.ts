@@ -207,7 +207,7 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
       "Content-Type": "application/json",
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     },
-    body: JSON.stringify({ shortlistRunId }),
+    body: JSON.stringify({ shortlistRunId, longlistRunId }),
   }).catch(err => console.error("Self-chain failed:", err));
 
   console.log(`Self-chaining shortlist run ${shortlistRunId}...`);
