@@ -164,6 +164,7 @@ export default function LeadsPage() {
                 <SelectItem value="Rest of World">Rest of World</SelectItem>
                 <SelectItem value="N/A">N/A</SelectItem>
               </SelectContent>
+            </Select>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
