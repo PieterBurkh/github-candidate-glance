@@ -51,8 +51,6 @@ export function RunsContent() {
   const pauseRun = usePauseRun();
   const [showForm, setShowForm] = useState(false);
   const [activeRunId, setActiveRunId] = useState<string | null>(null);
-  const [perPage, setPerPage] = useState(100);
-  const [maxPages, setMaxPages] = useState(10);
   const [selectedNets, setSelectedNets] = useState<string[]>(ALL_NETS.map((n) => n.id));
 
   const toggleNet = (netId: string) => {
@@ -62,7 +60,7 @@ export function RunsContent() {
   };
 
   const handleNewRun = async () => {
-    await startRun.mutateAsync({ nets: selectedNets, perPage, maxPages });
+    await startRun.mutateAsync({ nets: selectedNets, perPage: 30, maxPages: 1 });
     setShowForm(false);
   };
 
@@ -87,27 +85,6 @@ export function RunsContent() {
             <CardTitle className="text-lg">Configure Search</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex gap-4">
-              <div className="space-y-2">
-                <Label>Results Per Query</Label>
-                <Input
-                  type="number"
-                  value={perPage}
-                  onChange={(e) => setPerPage(Number(e.target.value))}
-                  className="w-32"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Max Pages</Label>
-                <Input
-                  type="number"
-                  value={maxPages}
-                  onChange={(e) => setMaxPages(Number(e.target.value))}
-                  className="w-32"
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
               <Label>Search Nets</Label>
               <p className="text-xs text-muted-foreground">
