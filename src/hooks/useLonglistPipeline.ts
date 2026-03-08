@@ -159,8 +159,8 @@ export function useDynamicLonglist(tierFilter?: string) {
       const query = supabase
         .from("longlist_candidates")
         .select("*")
-        .not("stage", "eq", "discarded")
         .gt("pre_score", 0)
+        .not("discard_reason", "in", '("organization","not_found","no_repos")')
         .order("pre_score", { ascending: false });
 
       const allScored = await fetchAllRows<LonglistCandidate>((from, to) =>
