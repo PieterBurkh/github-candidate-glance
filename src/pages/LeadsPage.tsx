@@ -193,6 +193,9 @@ export default function LeadsPage() {
                   <TableHead className="w-24">Tier</TableHead>
                   <TableHead className="w-28">Status</TableHead>
                   <TableHead className="w-36">Review</TableHead>
+                  <TableHead className="w-28">Location</TableHead>
+                  <TableHead className="w-20">Email</TableHead>
+                  <TableHead className="w-20">LinkedIn</TableHead>
                   <TableHead className="w-20 text-right">Followers</TableHead>
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Score</TableHead>
