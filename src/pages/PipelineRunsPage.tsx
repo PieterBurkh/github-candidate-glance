@@ -77,12 +77,11 @@ function PipelineRunCard({ run }: { run: PipelineRun }) {
 
   useEffect(() => {
     if (isActive) {
-      // Advance every 15s
       intervalRef.current = setInterval(() => {
-        advance.mutate(run.id);
+        if (!advance.isPending) {
+          advance.mutate(run.id);
+        }
       }, 15000);
-      // Also advance immediately on mount
-      advance.mutate(run.id);
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);

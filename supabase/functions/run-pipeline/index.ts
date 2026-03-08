@@ -13,21 +13,17 @@ function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
-async function invokeFunction(name: string, body: Record<string, unknown>) {
+/** Fire-and-forget: trigger an edge function without waiting for completion */
+function fireAndForget(name: string, body: Record<string, unknown>) {
   const url = `${SUPABASE_URL}/functions/v1/${name}`;
-  const res = await fetch(url, {
+  fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     },
     body: JSON.stringify(body),
-  });
-  if (!res.ok && res.status !== 202) {
-    const text = await res.text();
-    throw new Error(`${name} returned ${res.status}: ${text}`);
-  }
-  return res.json().catch(() => ({}));
+  }).catch((err) => console.error(`fire-and-forget ${name} error:`, err));
 }
 
 async function advancePipeline(pipelineRunId: string) {
@@ -47,17 +43,24 @@ async function advancePipeline(pipelineRunId: string) {
     }).eq("id", pipelineRunId);
   };
 
-  // ── PENDING → kick off search-repos ──
+  // ── PENDING → create run record optimistically, then fire search-repos ──
   if (stage === "pending") {
     const perPage = (config.per_page as number) || 6;
     const maxPages = (config.max_pages as number) || 1;
 
-    const result = await invokeFunction("search-repos", { perPage, maxPages });
-    const runId = result.runId;
-    if (!runId) throw new Error("search-repos did not return runId");
+    // Create the runs record directly so we have the ID immediately
+    const { data: newRun, error: runErr } = await sb.from("runs")
+      .insert({ status: "running", search_params: { perPage, maxPages } })
+      .select("id").single();
+    if (runErr) throw new Error(`Failed to create run: ${runErr.message}`);
 
-    await update({ stage: "initial_list", run_id: runId });
-    return { stage: "initial_list", runId };
+    // Optimistically update stage BEFORE triggering the long-running function
+    await update({ stage: "initial_list", run_id: newRun.id });
+
+    // Fire-and-forget: search-repos will update the run record when done
+    fireAndForget("search-repos", { runId: newRun.id, perPage, maxPages });
+
+    return { stage: "initial_list", runId: newRun.id };
   }
 
   // ── INITIAL_LIST → check runs status, then kick off build-longlist ──
@@ -69,8 +72,7 @@ async function advancePipeline(pipelineRunId: string) {
     if (run.status === "running") return { stage: "initial_list", waiting: true };
 
     if (run.status === "paused") {
-      // Resume search-repos
-      await invokeFunction("search-repos", { runId: pr.run_id });
+      fireAndForget("search-repos", { runId: pr.run_id });
       return { stage: "initial_list", resumed: true };
     }
 
@@ -85,8 +87,10 @@ async function advancePipeline(pipelineRunId: string) {
       .select("id").single();
     if (llErr) throw new Error(`Failed to create longlist run: ${llErr.message}`);
 
-    await invokeFunction("build-longlist", { longlistRunId: llRun.id });
+    // Optimistic update before firing
     await update({ stage: "longlist", longlist_run_id: llRun.id });
+    fireAndForget("build-longlist", { longlistRunId: llRun.id });
+
     return { stage: "longlist", longlistRunId: llRun.id };
   }
 
@@ -99,13 +103,11 @@ async function advancePipeline(pipelineRunId: string) {
     if (llRun.status === "running") return { stage: "longlist", waiting: true };
 
     if (llRun.status === "paused") {
-      // Check if rate limited
       const progress = llRun.progress as Record<string, unknown>;
       if (progress?.rate_limited) {
         return { stage: "longlist", rate_limited: true, progress };
       }
-      // Resume
-      await invokeFunction("build-longlist", { longlistRunId: pr.longlist_run_id });
+      fireAndForget("build-longlist", { longlistRunId: pr.longlist_run_id });
       return { stage: "longlist", resumed: true };
     }
 
@@ -114,17 +116,18 @@ async function advancePipeline(pipelineRunId: string) {
       return { stage: "failed" };
     }
 
-    // done → create shortlist run and kick off run-shortlist with longlistRunId
+    // done → create shortlist run and kick off run-shortlist
     const { data: slRun, error: slErr } = await sb.from("shortlist_runs")
       .insert({ status: "pending", progress: {} })
       .select("id").single();
     if (slErr) throw new Error(`Failed to create shortlist run: ${slErr.message}`);
 
-    await invokeFunction("run-shortlist", {
+    await update({ stage: "shortlist", shortlist_run_id: slRun.id });
+    fireAndForget("run-shortlist", {
       shortlistRunId: slRun.id,
       longlistRunId: pr.longlist_run_id,
     });
-    await update({ stage: "shortlist", shortlist_run_id: slRun.id });
+
     return { stage: "shortlist", shortlistRunId: slRun.id };
   }
 
@@ -141,8 +144,7 @@ async function advancePipeline(pipelineRunId: string) {
       if (progress?.rate_limited) {
         return { stage: "shortlist", rate_limited: true, progress };
       }
-      // Resume
-      await invokeFunction("run-shortlist", {
+      fireAndForget("run-shortlist", {
         shortlistRunId: pr.shortlist_run_id,
         longlistRunId: pr.longlist_run_id,
       });
