@@ -7,11 +7,6 @@ import {
   MapPin,
   Building,
   Users,
-  Code,
-  Shield,
-  Wrench,
-  Palette,
-  LayoutDashboard,
 } from "lucide-react";
 import { usePersonDetail, usePersonEvidence } from "@/hooks/useSignalPipeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
