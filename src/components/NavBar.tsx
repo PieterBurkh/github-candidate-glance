@@ -7,9 +7,7 @@ const links = [
   { to: "/longlist-results", label: "Longlist", icon: Users },
   { to: "/longlist", label: "Initial list", icon: List },
   { to: "/sourcing", label: "Sourcing", icon: Search },
-  { to: "/approach", label: "Initial list approach", icon: BookOpen },
-  { to: "/longlist-approach", label: "Longlist approach", icon: BookOpen },
-  { to: "/shortlist-approach", label: "Shortlist approach", icon: BookOpen },
+  { to: "/approach", label: "Search & Scoring", icon: BookOpen },
   { to: "/job", label: "Job Desc", icon: FileText },
 ];
 

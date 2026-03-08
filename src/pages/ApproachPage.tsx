@@ -14,12 +14,10 @@ const NETS = [
   { key: "wasm", label: "WASM", desc: "WebAssembly, Rust-to-web — pushes browser performance boundaries." },
 ];
 
-export default function ApproachPage() {
+export function ApproachContent() {
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Initial List Approach</h1>
+    <div className="mx-auto max-w-4xl py-8">
+      <h1 className="text-2xl font-bold tracking-tight text-foreground mb-2">Initial List Approach</h1>
         <p className="text-muted-foreground mb-8">
           How we systematically discover high-signal open-source contributors.
         </p>
@@ -95,8 +93,16 @@ export default function ApproachPage() {
               across all their repos. The top candidates form the shortlist for outreach.
             </p>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
+    </div>
+  );
+}
+
+export default function ApproachPage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <ApproachContent />
     </div>
   );
 }
