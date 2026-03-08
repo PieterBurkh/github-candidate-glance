@@ -123,7 +123,10 @@ export function ShortlistApproachContent() {
             <div className="space-y-2">
               {MUST_HAVES.map((m, i) => (
                 <div key={i} className="rounded-md border border-border p-3">
-                  <div className="font-medium text-sm text-foreground mb-1.5">{i + 1}. {m.criterion}</div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="font-medium text-sm text-foreground">{i + 1}. {m.criterion}</span>
+                    <Badge variant="secondary" className="text-[9px] font-mono shrink-0">×{m.weight}</Badge>
+                  </div>
                   <div className="grid sm:grid-cols-2 gap-2 text-xs">
                     <div className="flex gap-1.5">
                       <Badge variant="default" className="text-[9px] shrink-0">Strong</Badge>
