@@ -37,7 +37,6 @@ const ALL_NETS = [
 const statusConfig: Record<string, { icon: typeof Clock; className: string; label: string }> = {
   pending: { icon: Clock, className: "text-muted-foreground", label: "Pending" },
   running: { icon: Loader2, className: "text-primary animate-spin", label: "Running" },
-  pausing: { icon: Loader2, className: "text-amber-600 animate-spin", label: "Pausing…" },
   paused: { icon: Pause, className: "text-amber-600", label: "Paused" },
   timed_out: { icon: Clock, className: "text-amber-600", label: "Timed Out" },
   completed: { icon: CheckCircle2, className: "text-green-600", label: "Completed" },
