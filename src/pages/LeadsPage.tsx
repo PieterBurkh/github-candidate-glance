@@ -154,15 +154,7 @@ export default function LeadsPage() {
                 <SelectItem value="N/A">N/A</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={sortBy} onValueChange={(v) => setSortBy(v as any)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score">Sort by Pre-score</SelectItem>
-                <SelectItem value="enriched">Sort by Score</SelectItem>
-              </SelectContent>
-            </Select>
+            
             <Button variant="outline" size="sm" onClick={downloadCsv} disabled={sorted.length === 0}>
               <Download className="h-4 w-4 mr-1.5" />
               CSV
