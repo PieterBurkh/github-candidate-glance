@@ -216,7 +216,7 @@ export default function LeadsPage() {
                   <TableHead className="w-20 text-right">Repos</TableHead>
                   <TableHead className="w-24 text-right">Score</TableHead>
                   <TableHead className="min-w-[280px]">Assessment</TableHead>
-                  <TableHead className="min-w-[220px]">Outreach</TableHead>
+                  
                   <TableHead className="w-16" />
                 </TableRow>
               </TableHeader>
@@ -348,22 +348,6 @@ export default function LeadsPage() {
                           </Tooltip>
                         ) : enrichment ? (
                           <span className="text-xs text-muted-foreground italic">Pending</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">–</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {rubric?.outreach_draft ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <p className="text-[11px] text-muted-foreground line-clamp-2 cursor-help max-w-[220px]">
-                                {rubric.outreach_draft}
-                              </p>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="max-w-sm text-xs">
-                              {rubric.outreach_draft}
-                            </TooltipContent>
-                          </Tooltip>
                         ) : (
                           <span className="text-xs text-muted-foreground">–</span>
                         )}
