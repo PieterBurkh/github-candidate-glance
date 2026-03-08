@@ -176,6 +176,7 @@ export default function LeadsPage() {
                   <TableHead className="w-20">Email</TableHead>
                   
                   <TableHead className="w-20 text-right">Followers</TableHead>
+                  <TableHead className="w-20 text-right">Score</TableHead>
                   <TableHead className="min-w-[280px]">Assessment</TableHead>
                   
                   <TableHead className="w-16" />
@@ -255,6 +256,13 @@ export default function LeadsPage() {
                             <Users className="h-3 w-3" />
                             {h.followers.toLocaleString()}
                           </span>
+                        ) : (
+                          <span className="text-muted-foreground">–</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-sm font-medium">
+                        {enrichment?.overall_score != null && enrichment.overall_score > 0 ? (
+                          <span>{Math.round(enrichment.overall_score)}%</span>
                         ) : (
                           <span className="text-muted-foreground">–</span>
                         )}
