@@ -18,7 +18,7 @@ function createSb() {
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 }
 
-async function processShortlist(shortlistRunId: string) {
+async function processShortlist(shortlistRunId: string, longlistRunId?: string) {
   const startTime = Date.now();
   function timedOut() { return (Date.now() - startTime) > (DEADLINE_MS - 10000); }
 
@@ -35,11 +35,14 @@ async function processShortlist(shortlistRunId: string) {
   const allCandidates: { login: string; pre_score: number }[] = [];
   let from = 0;
   while (true) {
-    const { data: page } = await sb.from("longlist_candidates")
+    let query = sb.from("longlist_candidates")
       .select("login, pre_score")
       .gte("pre_score", 70)
-      .order("pre_score", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
+      .order("pre_score", { ascending: false });
+    if (longlistRunId) {
+      query = query.eq("longlist_run_id", longlistRunId);
+    }
+    const { data: page } = await query.range(from, from + PAGE_SIZE - 1);
     if (!page || page.length === 0) break;
     allCandidates.push(...page);
     if (page.length < PAGE_SIZE) break;
@@ -204,7 +207,7 @@ async function processShortlist(shortlistRunId: string) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
     },
-    body: JSON.stringify({ shortlistRunId }),
+    body: JSON.stringify({ shortlistRunId, longlistRunId }),
   }).catch(err => console.error("Self-chain failed:", err));
 
   console.log(`Self-chaining shortlist run ${shortlistRunId}...`);
@@ -217,11 +220,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { shortlistRunId } = await req.json();
+    const { shortlistRunId, longlistRunId } = await req.json();
     if (!shortlistRunId) throw new Error("shortlistRunId required");
 
     EdgeRuntime.waitUntil(
-      processShortlist(shortlistRunId).catch(async (error) => {
+      processShortlist(shortlistRunId, longlistRunId).catch(async (error) => {
         console.error(`Shortlist run ${shortlistRunId} failed:`, error);
         const sb = createSb();
         await sb.from("shortlist_runs").update({
