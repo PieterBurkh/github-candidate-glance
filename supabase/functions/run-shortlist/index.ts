@@ -35,11 +35,14 @@ async function processShortlist(shortlistRunId: string, longlistRunId?: string) 
   const allCandidates: { login: string; pre_score: number }[] = [];
   let from = 0;
   while (true) {
-    const { data: page } = await sb.from("longlist_candidates")
+    let query = sb.from("longlist_candidates")
       .select("login, pre_score")
       .gte("pre_score", 70)
-      .order("pre_score", { ascending: false })
-      .range(from, from + PAGE_SIZE - 1);
+      .order("pre_score", { ascending: false });
+    if (longlistRunId) {
+      query = query.eq("longlist_run_id", longlistRunId);
+    }
+    const { data: page } = await query.range(from, from + PAGE_SIZE - 1);
     if (!page || page.length === 0) break;
     allCandidates.push(...page);
     if (page.length < PAGE_SIZE) break;
